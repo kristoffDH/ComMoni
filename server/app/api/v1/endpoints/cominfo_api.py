@@ -18,7 +18,7 @@ def create_cominfo(
     return cominfo_crud.create_cominfo(db=db, cominfo=cominfo)
 
 
-@router.get("/", response_model=list[ComInfo])
+@router.get("/{server_id}", response_model=list[ComInfo])
 def get_cominfos(
         *,
         db: Session = Depends(get_db),
