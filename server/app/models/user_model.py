@@ -12,6 +12,6 @@ class User(Base):
             - user_pw : 사용자 비밀번호
             - user_name : 사용자 이름
     """
-    user_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_pw = Column(String)
-    user_name = Column(String)
+    user_id = Column(String(50), primary_key=True)
+    user_pw = Column(String(32))
+    user_name = Column(String(20))

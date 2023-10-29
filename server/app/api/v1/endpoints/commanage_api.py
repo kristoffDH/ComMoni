@@ -1,27 +1,34 @@
 from typing import Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
-from app.schemas.commange_schema import ComManageCreate, ComManage
-from app.crud import commanage_crud
+from app.crud import commanage_crud, user_crud
+from app.schemas.commange_schema import ComManage
+from app.schemas.user_schema import User
 
 router = APIRouter()
 
 
-@router.post("/", response_model=ComManageCreate)
+@router.post("/", response_model=ComManage)
 def create_commanage(
         *,
         db: Session = Depends(get_db),
-        commanage: ComManageCreate
+        commanage: ComManage
 ) -> Any:
-    return commanage_crud.create_commanage(db=db, commanage=commanage)
+    if user := user_crud.get_user(db=db, user_id=commanage.user_id):
+        return commanage_crud.create_commanage(db=db, commanage=commanage)
+    else:
+        raise HTTPException(status_code=404, detail=f"{commanage.user_id} is not exist user")
 
 
-@router.get("/all", response_model=list[ComManage])
+@router.get("/", response_model=list[ComManage])
 def get_commanage(
         *,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        user_id: str
 ) -> Any:
-    commanages = commanage_crud.get_commanage(db=db)
-    return commanages
+    if commanages := commanage_crud.get_commanage_by_user(db=db, user_id=user_id):
+        return commanages
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
