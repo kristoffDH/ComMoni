@@ -18,7 +18,7 @@ class ComInfoBase(BaseModel):
     host_id: Optional[int] = None
     cpu_utilization: Optional[float] = None
     memory_utilization: Optional[float] = None
-    disk__utilization: Optional[float] = None
+    disk_utilization: Optional[float] = None
     make_datetime: Optional[datetime] = None
 
     class Config:

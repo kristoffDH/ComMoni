@@ -1,10 +1,12 @@
-from typing import Any
-from fastapi import APIRouter, Depends
+from typing import Any, Annotated, Union
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
-from app.schemas.cominfo_schema import ComInfoCreate, ComInfo
-from app.crud import cominfo_crud
+from app.crud import cominfo_crud, commanage_crud
+from app.schemas.cominfo_schema import ComInfoCreate, ComInfoGet
 
 router = APIRouter()
 
@@ -15,14 +17,36 @@ def create_cominfo(
         db: Session = Depends(get_db),
         cominfo: ComInfoCreate
 ) -> Any:
-    return cominfo_crud.create_cominfo(db=db, cominfo=cominfo)
+    if commanage_crud.get_commanage_by_host(db=db, host_id=cominfo.host_id):
+        return cominfo_crud.create_cominfo(db=db, cominfo=cominfo)
+    else:
+        raise HTTPException(status_code=404, detail=f"host_id[{cominfo.host_id}] is not exist host_id")
 
 
-@router.get("/{server_id}", response_model=list[ComInfo])
+@router.get("/", response_model=list[ComInfoGet])
 def get_cominfos(
         *,
         db: Session = Depends(get_db),
-        server_id: int
+        host_id: int,
+        skip: int = 0,
+        limit: int = 1000
 ) -> Any:
-    cominfos = cominfo_crud.get_cominfo(db=db, server_id=server_id)
-    return cominfos
+    if cominfos := cominfo_crud.get_multi_cominfo(db=db, host_id=host_id, skip=skip, limit=limit):
+        return cominfos
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+
+@router.get("/by_datetime", response_model=list[ComInfoGet])
+def get_cominfo_by_datetime(
+        *,
+        db: Session = Depends(get_db),
+        host_id: int,
+        start_dt: datetime,
+        end_dt: datetime
+
+) -> Any:
+    if cominfos := cominfo_crud.get_cominfo_by_datetime(db=db, host_id=host_id, start_dt=start_dt, end_dt=end_dt):
+        return cominfos
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")

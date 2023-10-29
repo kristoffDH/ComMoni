@@ -34,7 +34,7 @@ class ComInfoRT(Base):
             - disk__utilization : 디스크 사용률
             - make_datetime : 데이터 생성 시간
     """
-    host_id = Column(Integer)
+    host_id = Column(Integer, primary_key=True)
     cpu_utilization = Column(Float)
     memory_utilization = Column(Float)
     disk_utilization = Column(Float)
