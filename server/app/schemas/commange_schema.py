@@ -14,7 +14,7 @@ class ComManageBase(BaseModel):
             - disk : 디스크 용량
     """
     host_id: Optional[int] = None
-    user_id: Optional[int] = None
+    user_id: Optional[str] = None
     host_name: Optional[str] = None
     host_ip: Optional[str] = None
     memory: Optional[str] = None
@@ -28,10 +28,6 @@ class ComManage(ComManageBase):
     pass
 
 
-class ComManageCreate(ComManageBase):
-    host_id: int
-
-
 class ComManageUpdate(ComManageBase):
     host_id: int
-    user_id: int
+    user_id: str

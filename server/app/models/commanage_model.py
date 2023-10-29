@@ -16,7 +16,7 @@ class ComManage(Base):
             - disk : 디스크 용량
     """
     host_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer)
+    user_id = Column(String(50), primary_key=True)
     host_name = Column(String(50))
     host_ip = Column(String(20))
     memory = Column(String(20))
