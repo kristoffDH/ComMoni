@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 class ComInfoBase(BaseModel):
     """
+        모니터링 데이터
+
         Attributes
             - host_id : 호스트 아이디
             - cpu_utilization : cpu 사용률
