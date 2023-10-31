@@ -29,24 +29,16 @@ def get_cominfos(
         db: Session = Depends(get_db),
         host_id: int,
         skip: int = 0,
-        limit: int = 1000
+        limit: int = 1000,
+        start_dt: datetime = None,
+        end_dt: datetime = None
 ) -> Any:
-    if cominfos := cominfo_crud.get_multi_cominfo(db=db, host_id=host_id, skip=skip, limit=limit):
-        return cominfos
+    if start_dt and end_dt:
+        cominfos = cominfo_crud.get_cominfo_by_datetime(db=db, host_id=host_id, start_dt=start_dt, end_dt=end_dt)
     else:
-        raise HTTPException(status_code=404, detail="Item not found")
+        cominfos = cominfo_crud.get_multi_cominfo(db=db, host_id=host_id, skip=skip, limit=limit)
 
-
-@router.get("/by_datetime", response_model=list[ComInfoGet])
-def get_cominfo_by_datetime(
-        *,
-        db: Session = Depends(get_db),
-        host_id: int,
-        start_dt: datetime,
-        end_dt: datetime
-
-) -> Any:
-    if cominfos := cominfo_crud.get_cominfo_by_datetime(db=db, host_id=host_id, start_dt=start_dt, end_dt=end_dt):
+    if cominfos:
         return cominfos
     else:
         raise HTTPException(status_code=404, detail="Item not found")
