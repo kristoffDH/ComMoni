@@ -26,3 +26,8 @@ class User(UserBase):
 class UserCreate(UserBase):
     user_id: str
     user_pw: str
+
+
+class UserUpdate(UserBase):
+    user_id: str
+    user_pw: str

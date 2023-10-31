@@ -1,4 +1,4 @@
-from typing import Any, Annotated, Union
+from typing import Any, Optional
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.base import get_db
 from app.crud import cominfo_crud, commanage_crud
-from app.schemas.cominfo_schema import ComInfoCreate, ComInfoGet
+from app.schemas.cominfo_schema import ComInfoCreate, ComInfoGet, ComInfo
 
 router = APIRouter()
 
@@ -17,6 +17,9 @@ def create_cominfo(
         db: Session = Depends(get_db),
         cominfo: ComInfoCreate
 ) -> Any:
+    """
+        cominfo 데이터 생성
+    """
     if commanage_crud.get_commanage_by_host(db=db, host_id=cominfo.host_id):
         return cominfo_crud.create_cominfo(db=db, cominfo=cominfo)
     else:
@@ -30,9 +33,12 @@ def get_cominfos(
         host_id: int,
         skip: int = 0,
         limit: int = 1000,
-        start_dt: datetime = None,
-        end_dt: datetime = None
+        start_dt: Optional[datetime] = None,
+        end_dt: Optional[datetime] = None
 ) -> Any:
+    """
+        cominfo 데이터 가져오기
+    """
     if start_dt and end_dt:
         cominfos = cominfo_crud.get_cominfo_by_datetime(db=db, host_id=host_id, start_dt=start_dt, end_dt=end_dt)
     else:
@@ -42,3 +48,33 @@ def get_cominfos(
         return cominfos
     else:
         raise HTTPException(status_code=404, detail="Item not found")
+
+
+@router.put("/realtime", response_model=ComInfo)
+def put_cominfo_realtime(
+        *,
+        db: Session = Depends(get_db),
+        cominfo: ComInfo
+) -> Any:
+    """
+    cominfo(실시간) 데이터 수정
+    """
+    if origin_cominfo := cominfo_crud.get_cominfo_rt(db=db, host_id=cominfo.host_id):
+        return cominfo_crud.update_cominfo_rt(db=db, origin=origin_cominfo, update=cominfo)
+    else:
+        return cominfo_crud.create_cominfo_rt(db=db, cominfo=cominfo)
+
+
+@router.get("/realtime", response_model=ComInfo)
+def get_cominfo_realtime(
+        *,
+        db: Session = Depends(get_db),
+        host_id: int
+) -> Any:
+    """
+    cominfo(실시간) 데이터 가져오기
+    """
+    if cominfo_rt := cominfo_crud.get_cominfo_rt(db=db, host_id=host_id):
+        return cominfo_rt
+    else:
+        raise HTTPException(status_code=404, detail=f"host_id[{host_id}] is not exist host_id")
