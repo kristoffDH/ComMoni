@@ -1,7 +1,7 @@
 from typing import Any
 from sqlalchemy.orm import Session
 
-from app.schemas.user_schema import UserCreate, User, UserUpdate
+from app.schemas.user_schema import UserCreate, User, UserUpdate, UserDelete
 from app.models import user_model as model
 
 
@@ -40,7 +40,7 @@ class UserCRUD:
                 .filter(model.User.user_id == user_id)
                 .first())
 
-    def update(self, origin: User, update: UserUpdate) -> model.User:
+    def update(self, origin: model.User, update: UserUpdate) -> model.User:
         """
         User 객체 수정
         :param origin: 원본 데이터
@@ -55,3 +55,16 @@ class UserCRUD:
         self.session.commit()
         self.session.refresh(origin)
         return origin
+
+    def delete(self, user: model.User) -> model.User:
+        """
+        User 삭제
+        :param user: 삭제하려는 User 객체
+        :return: model.User
+        """
+        user.deleted = True
+
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user

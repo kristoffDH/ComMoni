@@ -1,7 +1,7 @@
 from typing import Any, List
 from sqlalchemy.orm import Session
 
-from app.schemas.commange_schema import ComManageGet, ComManage
+from app.schemas.commange_schema import ComManageGet, ComManage, ComManageUpdate, ComManageDelete
 from app.models import commanage_model as model
 
 
@@ -51,7 +51,7 @@ class CommanageCRUD:
                 .filter(model.ComManage.user_id == user_id)
                 .all())
 
-    def update(self, origin: ComManage, update: ComManageGet) -> model.ComManage:
+    def update(self, origin: ComManage, update: ComManageUpdate) -> model.ComManage:
         """
         ComManage 객체 수정
         :param origin: 원본 데이터
@@ -66,3 +66,34 @@ class CommanageCRUD:
         self.session.commit()
         self.session.refresh(origin)
         return origin
+
+    def delete(self, host_id: int) -> model.ComManage:
+        """
+        ComManage 삭제
+        :param host_id: 삭제하려는 Host ID 값
+        :return: model.ComManage
+        """
+        commanage = self.get(host_id=host_id)
+        commanage.deleted = True
+
+        self.session.add(commanage)
+        self.session.commit()
+        self.session.refresh(commanage)
+        return commanage
+
+    def delete_all(self, user_id: str) -> None:
+        """
+        User ID에 해당하는 모든 ComManage 삭제 처리
+        :param user_id: 삭제하려는 User ID 값
+        :return: 없음
+        """
+        host_list = self.get_all(user_id=user_id)
+
+        if not host_list:
+            return
+
+        for host in host_list:
+            host.deleted = True
+            self.session.add(host)
+
+        self.session.commit()

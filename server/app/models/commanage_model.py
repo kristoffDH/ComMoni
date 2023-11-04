@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 
 from app.db.base import Base
 
@@ -21,3 +21,4 @@ class ComManage(Base):
     host_ip = Column(String(20))
     memory = Column(String(20))
     disk = Column(String(20))
+    deleted = Column(Boolean, default=False)

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
-from app.schemas.commange_schema import ComManage, ComManageGet
+from app.schemas.commange_schema import ComManage, ComManageUpdate, ComManageGet, ComManageDelete
 from app.crud.commanage_crud import CommanageCRUD
 from app.crud.user_crud import UserCRUD
 
@@ -44,8 +44,8 @@ def get_commanage(
     """
     if host_id and (commange := CommanageCRUD(db).get(host_id=host_id)):
         return [commange]
-    elif user_id:
-        return CommanageCRUD(db).get_all(user_id=user_id)
+    elif user_id and (commanage_list := CommanageCRUD(db).get_all(user_id=user_id)):
+        return commanage_list
     else:
         raise HTTPException(status_code=404, detail="Item not found")
 
@@ -54,7 +54,7 @@ def get_commanage(
 def update_commanage(
         *,
         db: Session = Depends(get_db),
-        commanage: ComManageGet
+        commanage: ComManageUpdate
 ) -> ComManage:
     """
     ComManage 객체 수정
@@ -67,3 +67,18 @@ def update_commanage(
     else:
         raise HTTPException(status_code=404,
                             detail=f"[user : {commanage.user_id} - host_id : {commanage.host_id}] is not found")
+
+
+@router.delete("/", response_model=ComManage)
+def delete_commanage(
+        *,
+        db: Session = Depends(get_db),
+        commanage: ComManageDelete
+) -> ComManage:
+    """
+    ComManage 삭제
+    :param db: db Session
+    :param commanage: 삭제하려는 ComManage 객체
+    :return: ComManage 스키마
+    """
+    return CommanageCRUD(db).delete(host_id=commanage.host_id)
