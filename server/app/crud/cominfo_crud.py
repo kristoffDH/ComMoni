@@ -96,7 +96,7 @@ class CominfoRtCRUD:
                 .filter(model.ComInfoRT.host_id == host_id)
                 .first())
 
-    def update(self, origin: ComInfoRT, update: ComInfoRTCreate) -> model.ComInfoRT:
+    def update(self, origin: model.ComInfoRT, update: ComInfoRTCreate) -> model.ComInfoRT:
         """
         ComInfoRt 객체 수정
         :param origin: 원본 데이터

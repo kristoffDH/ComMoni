@@ -51,7 +51,7 @@ class CommanageCRUD:
                 .filter(model.ComManage.user_id == user_id)
                 .all())
 
-    def update(self, origin: ComManage, update: ComManageUpdate) -> model.ComManage:
+    def update(self, origin: model.ComManage, update: ComManageUpdate) -> model.ComManage:
         """
         ComManage 객체 수정
         :param origin: 원본 데이터
