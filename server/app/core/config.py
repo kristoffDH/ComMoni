@@ -12,8 +12,6 @@ class Settings(BaseSettings):
     DB_NAME: str = "commonidb"
     SQLALCHEMY_DATABASE_URI: str = f'mysql+pymysql://{USERNAME}:{PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
-    TABLE_ISNT_EXIST: bool = True
-
     class Config:
         env_file = '.env'
 
