@@ -19,6 +19,7 @@ class ComManageBase(BaseModel):
     host_ip: Optional[str] = None
     memory: Optional[str] = None
     disk: Optional[str] = None
+    deleted: Optional[bool] = None
 
     class Config:
         from_attributes = True
@@ -29,4 +30,13 @@ class ComManage(ComManageBase):
 
 
 class ComManageGet(ComManageBase):
+    pass
+
+
+class ComManageUpdate(ComManageBase):
     user_id: str
+    host_id: int
+
+
+class ComManageDelete(ComManageBase):
+    host_id: int

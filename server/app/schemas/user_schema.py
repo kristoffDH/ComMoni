@@ -14,6 +14,7 @@ class UserBase(BaseModel):
     user_id: Optional[str] = None
     user_pw: Optional[str] = None
     user_name: Optional[str] = None
+    deleted: Optional[bool] = None
 
     class Config:
         from_attributes = True
@@ -31,3 +32,7 @@ class UserCreate(UserBase):
 class UserUpdate(UserBase):
     user_id: str
     user_pw: str
+
+
+class UserDelete(UserBase):
+    user_id: str

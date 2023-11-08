@@ -36,3 +36,11 @@ class ComInfoGet(ComInfoBase):
 class ComInfoCreate(ComInfoBase):
     host_id: int
     make_datetime: datetime
+
+
+class ComInfoRT(ComInfoBase):
+    pass
+
+
+class ComInfoRTCreate(ComInfoBase):
+    host_id: int

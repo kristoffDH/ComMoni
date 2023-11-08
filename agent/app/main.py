@@ -1,10 +1,30 @@
+import asyncio
 
-import os, psutil
-process = psutil.Process()
+from sig.setting import set_signal
+from schedule.scheduler import Scheduler
+from app.schedule.realtime_sender import send_reailtime_data
+from app.core.config import settings
 
 
-if __name__ == "__main__":
-    # Getting % usage of virtual_memory ( 3rd field)
-    print('RAM memory % used:', psutil.virtual_memory()[2])
-    # Getting usage of virtual_memory in GB ( 4th field)
-    print('RAM Used (GB):', psutil.virtual_memory())
+async def main():
+    # signal setting
+    set_signal(asyncio.get_running_loop())
+
+    agent_scheduler = Scheduler()
+
+    agent_scheduler.add_cron_schedule(
+        func=send_reailtime_data,
+        second=f'*/{settings.REALTIME_SEND_INTERVAL}',
+        args=None)
+
+    try:
+        while True:
+            await asyncio.sleep(1000)
+    except asyncio.CancelledError:
+        print("main catch Asyncio-CancelledError")
+
+    agent_scheduler.shutdown()
+
+
+# agent run
+asyncio.run(main())

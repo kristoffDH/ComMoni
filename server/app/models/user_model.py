@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Boolean, String
 
 from app.db.base import Base
 
@@ -15,3 +15,4 @@ class User(Base):
     user_id = Column(String(50), primary_key=True)
     user_pw = Column(String(32))
     user_name = Column(String(20))
+    deleted = Column(Boolean, default=False)
