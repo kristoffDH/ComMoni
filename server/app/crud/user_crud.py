@@ -1,8 +1,9 @@
 from typing import Any
 from sqlalchemy.orm import Session
 
-from app.schemas.user_schema import UserCreate, User, UserUpdate, UserDelete
+from app.schemas.user_schema import UserCreate, UserUpdate
 from app.models import user_model as model
+from app.core.dictionary_util import dictionary_util
 
 
 class UserCRUD:
@@ -40,31 +41,30 @@ class UserCRUD:
                 .filter(model.User.user_id == user_id)
                 .first())
 
-    def update(self, origin: model.User, update: UserUpdate) -> model.User:
+    def update(self, update_data: UserUpdate) -> None:
         """
         User 객체 수정
-        :param origin: 원본 데이터
-        :param update: 수정하려는 데이터
+        :param update_data: 수정하려는 데이터
         :return: model.User
         """
-        update_data = dict(update)
-        for key, value in update_data.items():
-            setattr(origin, key, value)
+        # 값이 None인 키 삭제
+        filtered_dict = dictionary_util.remove_none(dict(update_data))
 
-        self.session.add(origin)
+        (self.session.query(model.User)
+         .filter(model.User.user_id == update_data.user_id)
+         .update(filtered_dict)
+         )
         self.session.commit()
-        self.session.refresh(origin)
-        return origin
 
-    def delete(self, user: model.User) -> model.User:
+    def delete(self, user_id: str) -> None:
         """
         User 삭제
-        :param user: 삭제하려는 User 객체
-        :return: model.User
+        :param user_id: 삭제하려는 User ID
+        :return:
         """
-        user.deleted = True
 
-        self.session.add(user)
+        (self.session.query(model.User)
+         .filter(model.User.user_id == user_id)
+         .update({"deleted": True})
+         )
         self.session.commit()
-        self.session.refresh(user)
-        return user
