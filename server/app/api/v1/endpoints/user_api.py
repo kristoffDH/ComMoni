@@ -1,10 +1,13 @@
+from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
-from app.schemas.user_schema import UserCreate, User, UserUpdate, UserDelete
 from app.crud.user_crud import UserCRUD
+from app.schemas.user_schema import UserCreate, User, UserUpdate, UserDelete
 from app.crud.commanage_crud import CommanageCRUD
+
+from app.exception.api_exception import UserNotFoundException
 
 router = APIRouter()
 
@@ -14,7 +17,7 @@ def create_user(
         *,
         db: Session = Depends(get_db),
         user: UserCreate
-) -> UserCreate:
+) -> User:
     """
     유저 생성
     :param db: db Session
@@ -42,7 +45,7 @@ def get_user(
     user = UserCRUD(db).get(user_id=user_id)
 
     if not user:
-        raise HTTPException(status_code=404, detail=f"{user_id} is not exist")
+        raise UserNotFoundException(user_id=user_id)
 
     if user.deleted:
         raise HTTPException(status_code=404, detail=f"{user_id} is deleted")
@@ -50,43 +53,39 @@ def get_user(
         return user
 
 
-@router.put("/", response_model=User)
+@router.put("/")
 def update_user(
         *,
         db: Session = Depends(get_db),
         user: UserUpdate
-) -> User:
+) -> Any:
     """
     User 객체 정보 수정
     :param db: db Session
     :param user: 수정하려는 유저 정보
     :return: User 스키마
     """
-    if origin_user := UserCRUD(db).get(user_id=user.user_id):
-        return UserCRUD(db).update(origin=origin_user, update=user)
-    else:
-        raise HTTPException(status_code=404, detail=f"[user : {user.user_id} is not found")
+    UserCRUD(db).update(update_data=user)
 
 
-@router.delete("/", response_model=User)
+@router.delete("/")
 def delete_user(
         *,
         db: Session = Depends(get_db),
         user: UserDelete
-) -> User:
+) -> Any:
     """
     User를 삭제
     :param db: db Session
-    :param user: 삭제하려는 유저
-    :return: User 스키마
+    :param user: 삭제하려는 유저 정보
+    :return:
     """
-    delete_data = UserCRUD(db).get(user_id=user.user_id)
 
-    if not delete_data:
+    if not UserCRUD(db).get(user_id=user.user_id):
         raise HTTPException(status_code=404, detail=f"{user.user_id} is not exist")
 
     # User ID 에 해당하는 ComManage 전부 삭제 처리
     CommanageCRUD(db).delete_all(user_id=user.user_id)
 
     # user delete
-    return UserCRUD(db).delete(user=delete_data)
+    UserCRUD(db).delete(user_id=user.user_id)
