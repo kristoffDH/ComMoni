@@ -35,3 +35,8 @@ class UserUpdate(UserBase):
 
 class UserDelete(UserBase):
     user_id: str
+
+
+class UserResponse(BaseModel):
+    user_id: str
+    user_name: str

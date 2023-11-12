@@ -1,9 +1,11 @@
-from typing import Any
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.schemas.user_schema import UserCreate, UserUpdate
 from app.models import user_model as model
 from app.core.dictionary_util import dictionary_util
+from app.core.log import logger
+from app.crud import return_code
 
 
 class UserCRUD:
@@ -18,17 +20,22 @@ class UserCRUD:
         """
         self.session = session
 
-    def create(self, user: UserCreate) -> model.User:
+    def create(self, user: UserCreate) -> int:
         """
         User 객체 생성
         :param user: 추가하려는 User 객체
-        :return: model.User
+        :return: return_code
         """
         insert_data = model.User(**dict(user))
-        self.session.add(insert_data)
-        self.session.commit()
-        self.session.refresh(insert_data)
-        return insert_data
+        try:
+            self.session.add(insert_data)
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"DB Err : {err}")
+            self.session.rollback()
+            return return_code.DB_CREATE_ERROR
+
+        return return_code.DB_OK
 
     def get(self, user_id: str) -> model.User:
         """
@@ -36,35 +43,46 @@ class UserCRUD:
         :param user_id: User ID 값
         :return: model.User
         """
-        return (self.session
-                .query(model.User)
-                .filter(model.User.user_id == user_id)
-                .first())
+        return self.session \
+            .query(model.User) \
+            .filter(model.User.user_id == user_id) \
+            .first()
 
-    def update(self, update_data: UserUpdate) -> None:
+    def update(self, update_data: UserUpdate) -> int:
         """
         User 객체 수정
         :param update_data: 수정하려는 데이터
-        :return: model.User
+        :return: return_code
         """
         # 값이 None인 키 삭제
         filtered_dict = dictionary_util.remove_none(dict(update_data))
 
-        (self.session.query(model.User)
-         .filter(model.User.user_id == update_data.user_id)
-         .update(filtered_dict)
-         )
-        self.session.commit()
+        try:
+            updated = self.session.query(model.User) \
+                .filter(model.User.user_id == update_data.user_id) \
+                .update(filtered_dict)
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"DB Err : {err}")
+            self.session.rollback()
+            return return_code.DB_UPDATE_ERROR
 
-    def delete(self, user_id: str) -> None:
+        return return_code.DB_OK if updated > 0 else return_code.DB_UPDATE_NONE
+
+    def delete(self, user_id: str) -> int:
         """
         User 삭제
         :param user_id: 삭제하려는 User ID
-        :return:
+        :return: return_code
         """
+        try:
+            deleted = self.session.query(model.User) \
+                .filter(model.User.user_id == user_id) \
+                .update({"deleted": True})
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"DB Err : {err}")
+            self.session.rollback()
+            return return_code.DB_DELETE_ERROR
 
-        (self.session.query(model.User)
-         .filter(model.User.user_id == user_id)
-         .update({"deleted": True})
-         )
-        self.session.commit()
+        return return_code.DB_OK if deleted > 0 else return_code.DB_DELETE_NONE

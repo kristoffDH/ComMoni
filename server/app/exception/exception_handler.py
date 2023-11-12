@@ -5,5 +5,5 @@ from app.exception.api_exception import APIExceptionBase
 
 
 def base_exception_handler(_: Request, exc: APIExceptionBase):
-    return JSONResponse(status_code=exc.status,
+    return JSONResponse(status_code=exc.http_status,
                         content=exc.make_content())
