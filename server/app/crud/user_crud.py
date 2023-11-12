@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.schemas.user_schema import UserCreate, UserUpdate
+from app.schemas.user_schema import UserGet, UserCreate
 from app.models import user_model as model
 from app.core.dictionary_util import dictionary_util
 from app.core.log import logger
@@ -31,24 +31,24 @@ class UserCRUD:
             self.session.add(insert_data)
             self.session.commit()
         except SQLAlchemyError as err:
-            logger.error(f"DB Err : {err}")
+            logger.error(f"[User]DB Err : {err}")
             self.session.rollback()
             return return_code.DB_CREATE_ERROR
 
         return return_code.DB_OK
 
-    def get(self, user_id: str) -> model.User:
+    def get(self, user: UserGet) -> model.User:
         """
         User 객체를 가져오기
-        :param user_id: User ID 값
+        :param user: user 요청 객체
         :return: model.User
         """
         return self.session \
             .query(model.User) \
-            .filter(model.User.user_id == user_id) \
+            .filter(model.User.user_id == user.user_id) \
             .first()
 
-    def update(self, update_data: UserUpdate) -> int:
+    def update(self, update_data: UserGet) -> int:
         """
         User 객체 수정
         :param update_data: 수정하려는 데이터
@@ -63,25 +63,25 @@ class UserCRUD:
                 .update(filtered_dict)
             self.session.commit()
         except SQLAlchemyError as err:
-            logger.error(f"DB Err : {err}")
+            logger.error(f"[User]DB Error : {err}")
             self.session.rollback()
             return return_code.DB_UPDATE_ERROR
 
         return return_code.DB_OK if updated > 0 else return_code.DB_UPDATE_NONE
 
-    def delete(self, user_id: str) -> int:
+    def delete(self, user: UserGet) -> int:
         """
         User 삭제
-        :param user_id: 삭제하려는 User ID
+        :param user: 삭제 요청 객체
         :return: return_code
         """
         try:
             deleted = self.session.query(model.User) \
-                .filter(model.User.user_id == user_id) \
+                .filter(model.User.user_id == user.user_id) \
                 .update({"deleted": True})
             self.session.commit()
         except SQLAlchemyError as err:
-            logger.error(f"DB Err : {err}")
+            logger.error(f"[User]DB Err : {err}")
             self.session.rollback()
             return return_code.DB_DELETE_ERROR
 

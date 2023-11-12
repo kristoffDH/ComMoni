@@ -29,13 +29,13 @@ class ComManage(ComManageBase):
     pass
 
 
-class ComManageGet(ComManageBase):
-    pass
+class ComManageByUser(ComManageBase):
+    user_id: str
 
 
-class ComManageUpdate(ComManageBase):
+class ComManageByHost(ComManageBase):
     host_id: int
 
 
-class ComManageDelete(ComManageBase):
+class ComManageResponse(BaseModel):
     host_id: int

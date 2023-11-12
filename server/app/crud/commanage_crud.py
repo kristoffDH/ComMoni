@@ -1,9 +1,13 @@
-from typing import Any, List
+from typing import List
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.schemas.commange_schema import ComManageGet, ComManage, ComManageUpdate, ComManageDelete
+from app.schemas.commange_schema import ComManageByUser, ComManageByHost
 from app.models import commanage_model as model
 from app.core.dictionary_util import dictionary_util
+from app.crud import return_code
+
+from app.core.log import logger
 
 
 class CommanageCRUD:
@@ -18,73 +22,102 @@ class CommanageCRUD:
         """
         self.session = session
 
-    def create(self, commanage: ComManage) -> model.ComManage:
+    def create(self, commanage: ComManageByUser) -> (int, int):
         """
         ComManage 객체 생성
         :param commanage: 추가하려는 ComManage 객체
-        :return: model.ComManage
+        :return: return_code, host_id
         """
         insert_data = model.ComManage(**dict(commanage))
-        self.session.add(insert_data)
-        self.session.commit()
-        self.session.refresh(insert_data)
-        return insert_data
+        try:
+            self.session.add(insert_data)
+            self.session.commit()
+            self.session.refresh(insert_data)
+        except SQLAlchemyError as err:
+            logger.error(f"[ComManage]DB Error : {err}")
+            self.session.rollback()
+            return return_code.DB_CREATE_ERROR
 
-    def get(self, host_id: int) -> model.ComManage:
+        return return_code.DB_OK, insert_data.host_id
+
+    def get(self, commanage: ComManageByHost) -> model.ComManage:
         """
         ComManage 객체를 가져오기
-        :param host_id: Host ID 값
+        :param commanage: get 요청 객체
         :return: model.ComManage
         """
-        return (self.session
-                .query(model.ComManage)
-                .filter(model.ComManage.host_id == host_id)
-                .first())
+        return self.session \
+            .query(model.ComManage) \
+            .filter(model.ComManage.host_id == commanage.host_id) \
+            .first()
 
-    def get_all(self, user_id: str) -> List[model.ComManage]:
+    def get_all(self, commanage: ComManageByUser) -> List[model.ComManage]:
         """
         User ID에 해당하는 모든 ComManage 객체를 가져오기
-        :param user_id: User ID 값
+        :param commanage: get 요청 객체
         :return: List[model.ComManage]
         """
-        return (self.session
-                .query(model.ComManage)
-                .filter(model.ComManage.user_id == user_id)
-                .all())
+        return self.session \
+            .query(model.ComManage) \
+            .filter(model.ComManage.user_id == commanage.user_id) \
+            .all()
 
-    def update(self, update_data: ComManageUpdate) -> Any:
+    def update(self, update_data: ComManageByHost) -> int:
         """
         ComManage 객체 수정
         :param update_data: 수정하려는 데이터
-        :return:
+        :return: return_code
         """
 
         # 값이 None인 키 삭제
         filtered_dict = dictionary_util.remove_none(dict(update_data))
 
-        (self.session.query(model.ComManage)
-         .filter(model.ComManage.host_id == update_data.host_id)
-         .update(filtered_dict))
-        self.session.commit()
+        try:
+            updated = self.session.query(model.ComManage) \
+                .filter(model.ComManage.host_id == update_data.host_id) \
+                .update(filtered_dict)
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"[ComManage]DB Error : {err}")
+            self.session.rollback()
+            return return_code.DB_UPDATE_ERROR
 
-    def delete(self, host_id: int) -> Any:
+        return return_code.DB_OK if updated > 0 else return_code.DB_UPDATE_NONE
+
+    def delete(self, commanage: ComManageByHost) -> int:
         """
         ComManage 삭제
-        :param host_id: 삭제하려는 Host ID 값
-        :return:
+        :param commanage: 호스트 아이디가 포함된 삭제 요청 객체
+        :return: return_code
         """
-        (self.session.query(model.ComManage)
-         .filter(model.ComManage.host_id == host_id)
-         .update({'deleted': True}))
-        self.session.commit()
 
-    def delete_all(self, user_id: str) -> Any:
+        try:
+            deleted = self.session.query(model.ComManage) \
+                .filter(model.ComManage.host_id == commanage.host_id) \
+                .update({'deleted': True})
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"[ComManage]DB Error : {err}")
+            self.session.rollback()
+            return return_code.DB_DELETE_ERROR
+
+        return return_code.DB_OK if deleted > 0 else return_code.DB_DELETE_NONE
+
+    def delete_all(self, commanage: ComManageByUser) -> int:
         """
         User ID에 해당하는 모든 ComManage 삭제 처리
-        :param user_id: 삭제하려는 User ID 값
-        :return:
+        :param commanage: 유저 아이디가 포함된 삭제 요청 객체
+        :return: return_code
         """
-        (self.session.query(model.ComManage)
-         .filter(model.ComManage.user_id == user_id)
-         .update({'deleted': True}))
-        self.session.commit()
+
+        try:
+            deleted = self.session.query(model.ComManage) \
+                .filter(model.ComManage.user_id == commanage.user_id) \
+                .update({'deleted': True})
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"[ComManage]DB Error : {err}")
+            self.session.rollback()
+            return return_code.DB_DELETE_ERROR
+
+        return return_code.DB_OK if deleted > 0 else return_code.DB_DELETE_NONE

@@ -33,16 +33,6 @@ class UserNotFound(APIExceptionBase):
                          message=f"{user_id} is not existed.")
 
 
-class DeletedUser(APIExceptionBase):
-    """
-    User 가 이미 삭제 되었을 때 처리할 예외 클래스
-    """
-
-    def __init__(self, user_id: str):
-        super().__init__(http_status=status.HTTP_409_CONFLICT,
-                         message=f"{user_id} is deleted.")
-
-
 class AlreadyExistedUser(APIExceptionBase):
     """
     User 가 이미 존재할 때 처리할 예외 클래스
@@ -51,6 +41,26 @@ class AlreadyExistedUser(APIExceptionBase):
     def __init__(self, user_id: str):
         super().__init__(http_status=status.HTTP_409_CONFLICT,
                          message=f"{user_id} is already existed.")
+
+
+class ItemNotFound(APIExceptionBase):
+    """
+    Get요청에 대한 결과값이 없을 때 처리할 예외 클래스
+    """
+
+    def __init__(self):
+        super().__init__(http_status=status.HTTP_404_NOT_FOUND,
+                         message="Item not Found.")
+
+
+class HostNotFound(APIExceptionBase):
+    """
+    User 가 없을때 처리할 예외 클래스
+    """
+
+    def __init__(self, host_id: int):
+        super().__init__(http_status=status.HTTP_404_NOT_FOUND,
+                         message=f"{host_id} is not existed.")
 
 
 class ServerError(APIExceptionBase):
@@ -65,7 +75,8 @@ class ServerError(APIExceptionBase):
 
 __all__ = (
     "UserNotFound",
-    "DeletedUser",
     "AlreadyExistedUser",
+    "ItemNotFound",
+    "HostNotFound",
     "ServerError"
 )
