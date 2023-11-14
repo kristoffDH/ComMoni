@@ -1,33 +1,42 @@
 from typing import List, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
-from app.schemas.cominfo_schema import ComInfoCreate, ComInfo, ComInfoRTCreate, ComInfoRT
+from app.schemas.cominfo_schema import ComInfoCreate, ComInfo, ComInfoGet
+from app.schemas.cominfo_schema import ComInfoRT
+from app.schemas.commange_schema import ComManageByHost
 from app.crud.cominfo_crud import CominfoCRUD, CominfoRtCRUD
 from app.crud.commanage_crud import CommanageCRUD
+
+from app.exception import api_exception
+from app.crud import return_code
+
+from app.core.log import logger
 
 router = APIRouter()
 
 
-@router.post("/", response_model=ComInfo)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 def create_cominfo(
         *,
         db: Session = Depends(get_db),
         cominfo: ComInfoCreate
-) -> ComInfo:
+) -> None:
     """
     ComInfo 객체 추가
     :param db: db Session
     :param cominfo: 추가하려는 ComInfo 객체
     :return: ComInfoCreate 스키마
     """
-    if CommanageCRUD(db).get(host_id=cominfo.host_id):
-        return CominfoCRUD(db).create(cominfo=cominfo)
-    else:
-        raise HTTPException(status_code=404, detail=f"host_id[{cominfo.host_id}] is not exist host_id")
+    if not CommanageCRUD(db).get(commanage=ComManageByHost(host_id=cominfo.host_id)):
+        raise api_exception.HostNotFound(host_id=cominfo.host_id)
+
+    if CominfoCRUD(db).create(cominfo=cominfo) == return_code.DB_CREATE_ERROR:
+        logger.error(f"ComInfo Create Fail. cominfo : {cominfo}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_CREATE_ERROR}")
 
 
 @router.get("/", response_model=list[ComInfo])
@@ -36,7 +45,7 @@ def get_cominfos(
         db: Session = Depends(get_db),
         host_id: int,
         skip: int = 0,
-        limit: int = 1000,
+        limit: int = 50,
         start_dt: Optional[datetime] = None,
         end_dt: Optional[datetime] = None
 ) -> List[ComInfo]:
@@ -51,35 +60,41 @@ def get_cominfos(
     :return: List[ComInfoGet] 스키마
     """
     if start_dt or end_dt:
-        cominfos = CominfoCRUD(db).get_by_datetime(host_id=host_id, start_dt=start_dt, end_dt=end_dt)
+        cominfos = CominfoCRUD(db).get_by_datetime(cominfo=ComInfoGet(host_id=host_id),
+                                                   start_dt=start_dt, end_dt=end_dt)
     else:
-        cominfos = CominfoCRUD(db).get_multiline(host_id=host_id, skip=skip, limit=limit)
+        cominfos = CominfoCRUD(db).get_multiline(cominfo=ComInfoGet(host_id=host_id),
+                                                 skip=skip, limit=limit)
 
-    if cominfos:
-        return cominfos
-    else:
-        raise HTTPException(status_code=404, detail="Item not found")
+    if not cominfos:
+        raise api_exception.ItemNotFound()
+
+    return cominfos
 
 
-@router.put("/realtime", response_model=ComInfoRT)
+@router.put("/realtime", status_code=status.HTTP_204_NO_CONTENT)
 def put_cominfo_realtime(
         *,
         db: Session = Depends(get_db),
-        cominfo: ComInfoRTCreate
-) -> ComInfoRT:
+        cominfo: ComInfoRT
+) -> None:
     """
     CominfoRT(Real-Time) 값 추가 또는 수정
     :param db: db Session
     :param cominfo: 추가하려는 ComInfo 객체
-    :return: ComInfoRT 스키마
+    :return: None
     """
-    if origin_cominfo := CominfoRtCRUD(db).get(host_id=cominfo.host_id):
-        return CominfoRtCRUD(db).update(origin=origin_cominfo, update=cominfo)
+    if not CominfoRtCRUD(db).get(cominfo=ComInfoRT(host_id=cominfo.host_id)):
+        if CominfoRtCRUD(db).create(cominfo=cominfo) == return_code.DB_CREATE_ERROR:
+            logger.error(f"ComInfo Create Fail. cominfo : {cominfo}")
+            raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_CREATE_ERROR}")
     else:
-        return CominfoRtCRUD(db).create(cominfo=cominfo)
+        if CominfoRtCRUD(db).update(update_data=cominfo) == return_code.DB_UPDATE_ERROR:
+            logger.error(f"ComInfo Update Fail. cominfo : {cominfo}")
+            raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_UPDATE_ERROR}")
 
 
-@router.get("/realtime", response_model=ComInfo)
+@router.get("/realtime/{host_id}", response_model=ComInfoRT)
 def get_cominfo_realtime(
         *,
         db: Session = Depends(get_db),
@@ -91,7 +106,7 @@ def get_cominfo_realtime(
     :param host_id: Host ID 값
     :return: ComInfoRT 스키마
     """
-    if cominfo_rt := CominfoRtCRUD(db).get(host_id=host_id):
+    if cominfo_rt := CominfoRtCRUD(db).get(cominfo=ComInfoRT(host_id=host_id)):
         return cominfo_rt
     else:
-        raise HTTPException(status_code=404, detail=f"host_id[{host_id}] is not exist host_id")
+        raise api_exception.HostNotFound(host_id == host_id)

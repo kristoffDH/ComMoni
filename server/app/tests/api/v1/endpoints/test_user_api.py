@@ -77,15 +77,37 @@ def test_user_update(client):
 
 def test_user_delete(client):
     """
-    사용자 삭제
+    사용자 삭제, 연관된 commanage의 호스트도 전부 삭제되는지 확인
     """
+    for id in range(1, 4):
+        response = client.post(
+            "/api/v1/commanage",
+            json={"user_id": user_id},
+        )
+
+        assert response.status_code == 201
+        assert response.json() == {"host_id": id}
+
+    # client delete
     response = client.delete(
         f"/api/v1/user/{user_id}"
     )
     assert response.status_code == 204
 
+    # deleted client check
     response = client.get(f"/api/v1/user/{user_id}/status")
     assert response.status_code == 200
 
     status = response.json()
     assert status["deleted"] is True
+
+    # deleted commanage chck
+    for id in range(1, 4):
+        response = client.get(
+            f"/api/v1/commanage?host_id={id}",
+        )
+
+        assert response.status_code == 200
+
+        results = response.json()
+        assert results[0]['deleted'] is True

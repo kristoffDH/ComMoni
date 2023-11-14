@@ -79,7 +79,7 @@ def update_commanage(
     if not CommanageCRUD(db).get(commanage=commanage):
         raise api_exception.HostNotFound(host_id=commanage.host_id)
 
-    if CommanageCRUD(db).update(update_data=commanage) == return_code.DB_UPDATE_NONE:
+    if CommanageCRUD(db).update(update_data=commanage) == return_code.DB_UPDATE_ERROR:
         logger.error(f"host[{commanage.host_id}] : update fail")
         raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_UPDATE_NONE}")
 
@@ -100,6 +100,6 @@ def delete_commanage(
     if not CommanageCRUD(db).get(commanage=ComManageByHost(host_id=host_id)):
         raise api_exception.HostNotFound(host_id=host_id)
 
-    if CommanageCRUD(db).delete(commanage=ComManageByHost(host_id=host_id)) == return_code.DB_UPDATE_NONE:
+    if CommanageCRUD(db).delete(commanage=ComManageByHost(host_id=host_id)) == return_code.DB_DELETE_ERROR:
         logger.error(f"host[{host_id}] : delete fail")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_UPDATE_NONE}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_DELETE_ERROR}")
