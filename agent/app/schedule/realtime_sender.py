@@ -1,5 +1,7 @@
 import asyncio
 
+from aiohttp.client_exceptions import ClientConnectorError
+
 from app.core.config import settings
 from app.data.monitoring_data import MonitoringData
 from app.core.http_request import HttpRequest
@@ -16,5 +18,7 @@ async def send_reailtime_data():
         header = {"Content-Type": "application/json"}
         data = MonitoringData(host_id=host_id).make()
         await HttpRequest(api_url=api_url, data=data, header=header).put()
+    except ClientConnectorError as err:
+        print(f"ClientConnectorError : {err}")
     except asyncio.CancelledError:
         print(f"send_reailtime_data cancelled")

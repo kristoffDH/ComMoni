@@ -1,5 +1,4 @@
 from typing import Optional
-from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -20,8 +19,8 @@ class UserBase(BaseModel):
         from_attributes = True
 
 
-class User(UserBase):
-    pass
+class UserGet(UserBase):
+    user_id: str
 
 
 class UserCreate(UserBase):
@@ -29,10 +28,10 @@ class UserCreate(UserBase):
     user_pw: str
 
 
-class UserUpdate(UserBase):
+class UserResponse(BaseModel):
     user_id: str
-    user_pw: str
+    user_name: str
 
 
-class UserDelete(UserBase):
-    user_id: str
+class UserStatus(UserResponse):
+    deleted: bool

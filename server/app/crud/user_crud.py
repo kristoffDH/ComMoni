@@ -1,8 +1,11 @@
-from typing import Any
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.schemas.user_schema import UserCreate, User, UserUpdate, UserDelete
+from app.schemas.user_schema import UserGet, UserCreate
 from app.models import user_model as model
+from app.core.dictionary_util import dictionary_util
+from app.core.log import logger
+from app.crud import return_code
 
 
 class UserCRUD:
@@ -17,54 +20,69 @@ class UserCRUD:
         """
         self.session = session
 
-    def create(self, user: UserCreate) -> model.User:
+    def create(self, user: UserCreate) -> int:
         """
         User 객체 생성
         :param user: 추가하려는 User 객체
-        :return: model.User
+        :return: return_code
         """
         insert_data = model.User(**dict(user))
-        self.session.add(insert_data)
-        self.session.commit()
-        self.session.refresh(insert_data)
-        return insert_data
+        try:
+            self.session.add(insert_data)
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"[User]DB Err : {err}")
+            self.session.rollback()
+            return return_code.DB_CREATE_ERROR
 
-    def get(self, user_id: str) -> model.User:
+        return return_code.DB_OK
+
+    def get(self, user: UserGet) -> model.User:
         """
         User 객체를 가져오기
-        :param user_id: User ID 값
+        :param user: user 요청 객체
         :return: model.User
         """
-        return (self.session
-                .query(model.User)
-                .filter(model.User.user_id == user_id)
-                .first())
+        return self.session \
+            .query(model.User) \
+            .filter(model.User.user_id == user.user_id) \
+            .first()
 
-    def update(self, origin: model.User, update: UserUpdate) -> model.User:
+    def update(self, update_data: UserGet) -> int:
         """
         User 객체 수정
-        :param origin: 원본 데이터
-        :param update: 수정하려는 데이터
-        :return: model.User
+        :param update_data: 수정하려는 데이터
+        :return: return_code
         """
-        update_data = dict(update)
-        for key, value in update_data.items():
-            setattr(origin, key, value)
+        # 값이 None인 키 삭제
+        filtered_dict = dictionary_util.remove_none(dict(update_data))
 
-        self.session.add(origin)
-        self.session.commit()
-        self.session.refresh(origin)
-        return origin
+        try:
+            updated = self.session.query(model.User) \
+                .filter(model.User.user_id == update_data.user_id) \
+                .update(filtered_dict)
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"[User]DB Error : {err}")
+            self.session.rollback()
+            return return_code.DB_UPDATE_ERROR
 
-    def delete(self, user: model.User) -> model.User:
+        return return_code.DB_OK if updated > 0 else return_code.DB_UPDATE_NONE
+
+    def delete(self, user: UserGet) -> int:
         """
         User 삭제
-        :param user: 삭제하려는 User 객체
-        :return: model.User
+        :param user: 삭제 요청 객체
+        :return: return_code
         """
-        user.deleted = True
+        try:
+            deleted = self.session.query(model.User) \
+                .filter(model.User.user_id == user.user_id) \
+                .update({"deleted": True})
+            self.session.commit()
+        except SQLAlchemyError as err:
+            logger.error(f"[User]DB Err : {err}")
+            self.session.rollback()
+            return return_code.DB_DELETE_ERROR
 
-        self.session.add(user)
-        self.session.commit()
-        self.session.refresh(user)
-        return user
+        return return_code.DB_OK if deleted > 0 else return_code.DB_DELETE_NONE
