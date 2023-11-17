@@ -12,7 +12,7 @@ from app.crud.cominfo_crud import CominfoCRUD, CominfoRtCRUD
 from app.crud.commanage_crud import CommanageCRUD
 
 from app.exception import api_exception
-from app.crud import return_code
+from app.crud.return_code import ReturnCode
 
 from app.core.log import logger
 
@@ -34,9 +34,9 @@ def create_cominfo(
     if not CommanageCRUD(db).get(commanage=ComManageByHost(host_id=cominfo.host_id)):
         raise api_exception.HostNotFound(host_id=cominfo.host_id)
 
-    if CominfoCRUD(db).create(cominfo=cominfo) == return_code.DB_CREATE_ERROR:
+    if CominfoCRUD(db).create(cominfo=cominfo) == ReturnCode.DB_CREATE_ERROR:
         logger.error(f"ComInfo Create Fail. cominfo : {cominfo}")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_CREATE_ERROR}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_CREATE_ERROR}")
 
 
 @router.get("/", response_model=list[ComInfo])
@@ -85,13 +85,13 @@ def put_cominfo_realtime(
     :return: None
     """
     if not CominfoRtCRUD(db).get(cominfo=ComInfoRT(host_id=cominfo.host_id)):
-        if CominfoRtCRUD(db).create(cominfo=cominfo) == return_code.DB_CREATE_ERROR:
+        if CominfoRtCRUD(db).create(cominfo=cominfo) == ReturnCode.DB_CREATE_ERROR:
             logger.error(f"ComInfo Create Fail. cominfo : {cominfo}")
-            raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_CREATE_ERROR}")
+            raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_CREATE_ERROR}")
     else:
-        if CominfoRtCRUD(db).update(update_data=cominfo) == return_code.DB_UPDATE_ERROR:
+        if CominfoRtCRUD(db).update(update_data=cominfo) == ReturnCode.DB_UPDATE_ERROR:
             logger.error(f"ComInfo Update Fail. cominfo : {cominfo}")
-            raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_UPDATE_ERROR}")
+            raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_UPDATE_ERROR}")
 
 
 @router.get("/realtime/{host_id}", response_model=ComInfoRT)

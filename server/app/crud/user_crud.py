@@ -5,7 +5,7 @@ from app.schemas.user_schema import UserGet, UserCreate
 from app.models import user_model as model
 from app.core.dictionary_util import dictionary_util
 from app.core.log import logger
-from app.crud import return_code
+from app.crud.return_code import ReturnCode
 
 
 class UserCRUD:
@@ -33,9 +33,9 @@ class UserCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[User]DB Err : {err}")
             self.session.rollback()
-            return return_code.DB_CREATE_ERROR
+            return ReturnCode.DB_CREATE_ERROR
 
-        return return_code.DB_OK
+        return ReturnCode.DB_OK
 
     def get(self, user: UserGet) -> model.User:
         """
@@ -65,9 +65,9 @@ class UserCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[User]DB Error : {err}")
             self.session.rollback()
-            return return_code.DB_UPDATE_ERROR
+            return ReturnCode.DB_UPDATE_ERROR
 
-        return return_code.DB_OK if updated > 0 else return_code.DB_UPDATE_NONE
+        return ReturnCode.DB_OK if updated > 0 else ReturnCode.DB_UPDATE_NONE
 
     def delete(self, user: UserGet) -> int:
         """
@@ -83,6 +83,6 @@ class UserCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[User]DB Err : {err}")
             self.session.rollback()
-            return return_code.DB_DELETE_ERROR
+            return ReturnCode.DB_DELETE_ERROR
 
-        return return_code.DB_OK if deleted > 0 else return_code.DB_DELETE_NONE
+        return ReturnCode.DB_OK if deleted > 0 else ReturnCode경.DB_DELETE_NONE

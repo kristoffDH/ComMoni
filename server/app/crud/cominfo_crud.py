@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.schemas.cominfo_schema import ComInfoCreate, ComInfoGet, ComInfoRT
 from app.models import cominfo_model as model
-from app.crud import return_code
+from app.crud.return_code import ReturnCode
 
 from app.core.log import logger
 
@@ -23,11 +23,11 @@ class CominfoCRUD:
         """
         self.session = session
 
-    def create(self, cominfo: ComInfoCreate) -> model.ComInfo:
+    def create(self, cominfo: ComInfoCreate) -> ReturnCode:
         """
         ComInfo 객체 생성
         :param cominfo: 추가하려는 ComInfo 객체
-        :return: model.ComInfo
+        :return: ReturnCode
         """
         insert_data = model.ComInfo(**dict(cominfo))
         try:
@@ -36,9 +36,9 @@ class CominfoCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComInfo]DB Error : {err}")
             self.session.rollback()
-            return return_code.DB_CREATE_ERROR
+            return ReturnCode.DB_CREATE_ERROR
 
-        return return_code.DB_OK
+        return ReturnCode.DB_OK
 
     def get_by_datetime(self, cominfo: ComInfoGet, start_dt: datetime, end_dt: datetime) -> List[model.ComInfo]:
         """
@@ -83,11 +83,11 @@ class CominfoRtCRUD:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, cominfo: ComInfoRT) -> model.ComInfoRT:
+    def create(self, cominfo: ComInfoRT) -> ReturnCode:
         """
         ComInfoRT 객체를 생성
         :param cominfo: 생성하려는 ComInfoRT 객체
-        :return: model.ComInfoRT
+        :return: ReturnCode
         """
         insert_data = model.ComInfoRT(**dict(cominfo))
         try:
@@ -96,9 +96,9 @@ class CominfoRtCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComInfo]DB Error : {err}")
             self.session.rollback()
-            return return_code.DB_CREATE_ERROR
+            return ReturnCode.DB_CREATE_ERROR
 
-        return return_code.DB_OK
+        return ReturnCode.DB_OK
 
     def get(self, cominfo: ComInfoRT) -> model.ComInfoRT:
         """
@@ -111,11 +111,11 @@ class CominfoRtCRUD:
             .filter(model.ComInfoRT.host_id == cominfo.host_id) \
             .first()
 
-    def update(self, update_data: ComInfoRT) -> model.ComInfoRT:
+    def update(self, update_data: ComInfoRT) -> ReturnCode:
         """
         ComInfoRt 객체 수정
         :param update_data: 수정하려는 데이터
-        :return: model.ComInfo
+        :return: ReturnCode
         """
 
         try:
@@ -126,6 +126,6 @@ class CominfoRtCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComInfo]DB Error : {err}")
             self.session.rollback()
-            return return_code.DB_UPDATE_ERROR
+            return ReturnCode.DB_UPDATE_ERROR
 
-        return return_code.DB_OK if updated > 0 else return_code.DB_UPDATE_NONE
+        return ReturnCode.DB_OK if updated > 0 else ReturnCode.DB_UPDATE_NONE
