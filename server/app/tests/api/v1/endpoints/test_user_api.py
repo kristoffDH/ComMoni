@@ -1,4 +1,4 @@
-from app.tests.test_config import client, session
+from app.tests.api.conftest import client
 
 user_id = "test_user_1"
 user_pw = "1234567890"

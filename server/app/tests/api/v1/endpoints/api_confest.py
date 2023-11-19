@@ -2,7 +2,7 @@ import pytest
 
 from app.models.user_model import User
 from app.models.commanage_model import ComManage
-from app.tests.test_config import session
+from app.tests.api.conftest import session
 
 user_id = "test_user"
 user_pw = "1234567890"

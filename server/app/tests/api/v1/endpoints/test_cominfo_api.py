@@ -1,6 +1,6 @@
 from urllib import parse
 
-from app.tests.test_config import client, session
+from app.tests.api.conftest import client
 
 from app.tests.api.v1.endpoints.api_confest import create_user, create_commanage
 

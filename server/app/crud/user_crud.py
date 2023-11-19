@@ -85,4 +85,4 @@ class UserCRUD:
             self.session.rollback()
             return ReturnCode.DB_DELETE_ERROR
 
-        return ReturnCode.DB_OK if deleted > 0 else ReturnCode경.DB_DELETE_NONE
+        return ReturnCode.DB_OK if deleted > 0 else ReturnCode.DB_DELETE_NONE

@@ -36,7 +36,7 @@ class CommanageCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComManage]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_CREATE_ERROR
+            return ReturnCode.DB_CREATE_ERROR, None
 
         return ReturnCode.DB_OK, insert_data.host_id
 
@@ -84,16 +84,16 @@ class CommanageCRUD:
 
         return ReturnCode.DB_OK if updated > 0 else ReturnCode.DB_UPDATE_NONE
 
-    def delete(self, commanage: ComManageByHost) -> ReturnCode:
+    def delete(self, delete_data: ComManageByHost) -> ReturnCode:
         """
         ComManage 삭제
-        :param commanage: 호스트 아이디가 포함된 삭제 요청 객체
+        :param delete_data: 호스트 아이디가 포함된 삭제 요청 객체
         :return: ReturnCode
         """
 
         try:
             deleted = self.session.query(model.ComManage) \
-                .filter(model.ComManage.host_id == commanage.host_id) \
+                .filter(model.ComManage.host_id == delete_data.host_id) \
                 .update({'deleted': True})
             self.session.commit()
         except SQLAlchemyError as err:

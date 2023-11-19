@@ -100,6 +100,6 @@ def delete_commanage(
     if not CommanageCRUD(db).get(commanage=ComManageByHost(host_id=host_id)):
         raise api_exception.HostNotFound(host_id=host_id)
 
-    if CommanageCRUD(db).delete(commanage=ComManageByHost(host_id=host_id)) == ReturnCode.DB_DELETE_ERROR:
+    if CommanageCRUD(db).delete(delete_data=ComManageByHost(host_id=host_id)) == ReturnCode.DB_DELETE_ERROR:
         logger.error(f"host[{host_id}] : delete fail")
         raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_DELETE_ERROR}")
