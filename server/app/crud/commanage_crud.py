@@ -5,7 +5,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.schemas.commange_schema import ComManageByUser, ComManageByHost
 from app.models import commanage_model as model
 from app.core.dictionary_util import dictionary_util
+
 from app.crud.return_code import ReturnCode
+from app.exception.crud_exception import CrudException
 
 from app.core.log import logger
 
@@ -22,11 +24,11 @@ class CommanageCRUD:
         """
         self.session = session
 
-    def create(self, commanage: ComManageByUser) -> (ReturnCode, int):
+    def create(self, commanage: ComManageByUser) -> model.ComManage:
         """
         ComManage 객체 생성
         :param commanage: 추가하려는 ComManage 객체
-        :return: ReturnCode, host_id
+        :return: model.ComManage
         """
         insert_data = model.ComManage(**dict(commanage))
         try:
@@ -36,9 +38,9 @@ class CommanageCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComManage]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_CREATE_ERROR, None
+            raise CrudException(return_code=ReturnCode.DB_CREATE_ERROR)
 
-        return ReturnCode.DB_OK, insert_data.host_id
+        return insert_data
 
     def get(self, commanage: ComManageByHost) -> model.ComManage:
         """
@@ -46,10 +48,14 @@ class CommanageCRUD:
         :param commanage: get 요청 객체
         :return: model.ComManage
         """
-        return self.session \
-            .query(model.ComManage) \
-            .filter(model.ComManage.host_id == commanage.host_id) \
-            .first()
+        try:
+            return self.session \
+                .query(model.ComManage) \
+                .filter(model.ComManage.host_id == commanage.host_id) \
+                .first()
+        except SQLAlchemyError as err:
+            logger.error(f"[ComManage]DB Error : {err}")
+            raise CrudException(return_code=ReturnCode.DB_GET_ERROR)
 
     def get_all(self, commanage: ComManageByUser) -> List[model.ComManage]:
         """
@@ -57,10 +63,14 @@ class CommanageCRUD:
         :param commanage: get 요청 객체
         :return: List[model.ComManage]
         """
-        return self.session \
-            .query(model.ComManage) \
-            .filter(model.ComManage.user_id == commanage.user_id) \
-            .all()
+        try:
+            return self.session \
+                .query(model.ComManage) \
+                .filter(model.ComManage.user_id == commanage.user_id) \
+                .all()
+        except SQLAlchemyError as err:
+            logger.error(f"[ComManage]DB Error : {err}")
+            raise CrudException(return_code=ReturnCode.DB_GET_ERROR)
 
     def update(self, update_data: ComManageByHost) -> ReturnCode:
         """
@@ -80,9 +90,13 @@ class CommanageCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComManage]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_UPDATE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_UPDATE_ERROR)
 
-        return ReturnCode.DB_OK if updated > 0 else ReturnCode.DB_UPDATE_NONE
+        if updated == 0:
+            logger.error("[ComManage]Update is none")
+            raise CrudException(return_code=ReturnCode.DB_UPDATE_NONE)
+
+        return ReturnCode.DB_OK
 
     def delete(self, delete_data: ComManageByHost) -> ReturnCode:
         """
@@ -99,9 +113,13 @@ class CommanageCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComManage]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_DELETE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_DELETE_ERROR)
 
-        return ReturnCode.DB_OK if deleted > 0 else ReturnCode.DB_DELETE_NONE
+        if deleted == 0:
+            logger.error("[ComManage]Delete is none")
+            raise CrudException(return_code=ReturnCode.DB_DELETE_NONE)
+
+        return ReturnCode.DB_OK
 
     def delete_all(self, commanage: ComManageByUser) -> ReturnCode:
         """
@@ -118,6 +136,9 @@ class CommanageCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComManage]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_DELETE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_ALL_DELETE_ERROR)
 
-        return ReturnCode.DB_OK if deleted > 0 else ReturnCode.DB_DELETE_NONE
+        if deleted == 0:
+            raise CrudException(return_code=ReturnCode.DB_ALL_DELETE_NONE)
+
+        return ReturnCode.DB_OK

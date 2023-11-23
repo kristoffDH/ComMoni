@@ -6,7 +6,9 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.schemas.cominfo_schema import ComInfoCreate, ComInfoGet, ComInfoRT
 from app.models import cominfo_model as model
+
 from app.crud.return_code import ReturnCode
+from app.exception.crud_exception import CrudException
 
 from app.core.log import logger
 
@@ -23,11 +25,11 @@ class CominfoCRUD:
         """
         self.session = session
 
-    def create(self, cominfo: ComInfoCreate) -> ReturnCode:
+    def create(self, cominfo: ComInfoCreate) -> model.ComInfo:
         """
         ComInfo 객체 생성
         :param cominfo: 추가하려는 ComInfo 객체
-        :return: ReturnCode
+        :return: model.ComInfo
         """
         insert_data = model.ComInfo(**dict(cominfo))
         try:
@@ -36,11 +38,12 @@ class CominfoCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[ComInfo]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_CREATE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_CREATE_ERROR)
 
-        return ReturnCode.DB_OK
+        return insert_data
 
-    def get_by_datetime(self, cominfo: ComInfoGet, start_dt: datetime, end_dt: datetime) -> List[model.ComInfo]:
+    def get_by_datetime(self, cominfo: ComInfoGet, start_dt: datetime = None, end_dt: datetime = None) -> List[
+        model.ComInfo]:
         """
         시작 날짜 ~ 종료 날짜 사이의 ComInfo 객체를 가져오기
         :param cominfo: Host ID 값이 포함된 객체
@@ -48,16 +51,20 @@ class CominfoCRUD:
         :param end_dt: 종료 날짜/시간
         :return: List[model.ComInfo]
         """
-        query = self.session.query(model.ComInfo) \
-            .filter(model.ComInfo.host_id == cominfo.host_id)
+        try:
+            query = self.session.query(model.ComInfo) \
+                .filter(model.ComInfo.host_id == cominfo.host_id)
 
-        if start_dt:
-            query = query.filter(model.ComInfo.make_datetime >= start_dt)
+            if start_dt:
+                query = query.filter(model.ComInfo.make_datetime >= start_dt)
 
-        if end_dt:
-            query = query.filter(model.ComInfo.make_datetime <= end_dt)
+            if end_dt:
+                query = query.filter(model.ComInfo.make_datetime <= end_dt)
 
-        return query.all()
+            return query.all()
+        except SQLAlchemyError as err:
+            logger.error(f"[ComInfo]DB Error : {err}")
+            raise CrudException(return_code=ReturnCode.DB_GET_ERROR)
 
     def get_multiline(self, cominfo: ComInfoGet, skip: int = 0, limit: int = 1000) -> List[model.ComInfo]:
         """
@@ -67,12 +74,16 @@ class CominfoCRUD:
         :param limit: 가져오려는 Row
         :return: List[model.ComInfo]
         """
-        return self.session \
-            .query(model.ComInfo) \
-            .filter(model.ComInfo.host_id == cominfo.host_id) \
-            .offset(skip) \
-            .limit(limit) \
-            .all()
+        try:
+            return self.session \
+                .query(model.ComInfo) \
+                .filter(model.ComInfo.host_id == cominfo.host_id) \
+                .offset(skip) \
+                .limit(limit) \
+                .all()
+        except SQLAlchemyError as err:
+            logger.error(f"[ComInfo]DB Error : {err}")
+            raise CrudException(return_code=ReturnCode.DB_GET_ERROR)
 
 
 class CominfoRtCRUD:
@@ -83,22 +94,22 @@ class CominfoRtCRUD:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, cominfo: ComInfoRT) -> ReturnCode:
+    def create(self, cominfo: ComInfoRT) -> model.ComInfoRT:
         """
         ComInfoRT 객체를 생성
         :param cominfo: 생성하려는 ComInfoRT 객체
-        :return: ReturnCode
+        :return: model.ComInfoRT
         """
         insert_data = model.ComInfoRT(**dict(cominfo))
         try:
             self.session.add(insert_data)
             self.session.commit()
         except SQLAlchemyError as err:
-            logger.error(f"[ComInfo]DB Error : {err}")
+            logger.error(f"[ComInfoRT]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_CREATE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_CREATE_ERROR)
 
-        return ReturnCode.DB_OK
+        return insert_data
 
     def get(self, cominfo: ComInfoRT) -> model.ComInfoRT:
         """
@@ -106,10 +117,14 @@ class CominfoRtCRUD:
         :param cominfo: Host ID 값이 포함된 객체
         :return: model.ComInfoRT
         """
-        return self.session \
-            .query(model.ComInfoRT) \
-            .filter(model.ComInfoRT.host_id == cominfo.host_id) \
-            .first()
+        try:
+            return self.session \
+                .query(model.ComInfoRT) \
+                .filter(model.ComInfoRT.host_id == cominfo.host_id) \
+                .first()
+        except SQLAlchemyError as err:
+            logger.error(f"[ComInfoRT]DB Error : {err}")
+            raise CrudException(return_code=ReturnCode.DB_GET_ERROR)
 
     def update(self, update_data: ComInfoRT) -> ReturnCode:
         """
@@ -124,8 +139,11 @@ class CominfoRtCRUD:
                 .update(dict(update_data))
             self.session.commit()
         except SQLAlchemyError as err:
-            logger.error(f"[ComInfo]DB Error : {err}")
+            logger.error(f"[ComInfoRT]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_UPDATE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_UPDATE_ERROR)
 
-        return ReturnCode.DB_OK if updated > 0 else ReturnCode.DB_UPDATE_NONE
+        if updated == 0:
+            raise CrudException(return_code=ReturnCode.DB_UPDATE_NONE)
+
+        return ReturnCode.DB_OK
