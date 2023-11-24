@@ -35,6 +35,9 @@ class ComInfoGet(ComInfoBase):
 
 class ComInfoCreate(ComInfoBase):
     host_id: int
+    cpu_utilization: float
+    memory_utilization: float
+    disk_utilization: float
     make_datetime: datetime
 
 

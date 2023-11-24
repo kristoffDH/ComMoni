@@ -139,6 +139,6 @@ class CommanageCRUD:
             raise CrudException(return_code=ReturnCode.DB_ALL_DELETE_ERROR)
 
         if deleted == 0:
-            raise CrudException(return_code=ReturnCode.DB_ALL_DELETE_NONE)
+            return ReturnCode.DB_ALL_DELETE_NONE
 
         return ReturnCode.DB_OK

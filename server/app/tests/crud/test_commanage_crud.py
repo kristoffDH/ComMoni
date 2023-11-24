@@ -116,8 +116,8 @@ class TestCommanageCRUD:
         session.query.return_value.filter.return_value.update.return_value = 0
 
         delete_data = ComManageByUser(user_id=self.user_id)
-        with pytest.raises(CrudException, match=str(ReturnCode.DB_ALL_DELETE_NONE)):
-            CommanageCRUD(session).delete_all(commanage=delete_data)
+        result = CommanageCRUD(session).delete_all(commanage=delete_data)
+        assert result == ReturnCode.DB_ALL_DELETE_NONE
 
     def test_delete_all_fail_by_db_error(self):
         """사용자에 해당하는 Commanage 전체 삭제 실패(DB 에러 발생)"""

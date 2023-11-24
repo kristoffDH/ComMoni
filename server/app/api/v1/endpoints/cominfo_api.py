@@ -2,6 +2,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
@@ -12,6 +13,7 @@ from app.crud.cominfo_crud import CominfoCRUD, CominfoRtCRUD
 from app.crud.commanage_crud import CommanageCRUD
 
 from app.exception import api_exception
+from app.exception.crud_exception import CrudException
 from app.crud.return_code import ReturnCode
 
 from app.core.log import logger
@@ -24,22 +26,32 @@ def create_cominfo(
         *,
         db: Session = Depends(get_db),
         cominfo: ComInfoCreate
-) -> None:
+) -> ComInfoGet:
     """
     ComInfo 객체 추가
     :param db: db Session
     :param cominfo: 추가하려는 ComInfo 객체
-    :return: ComInfoCreate 스키마
+    :return: ComInfoGet 스키마
     """
-    if not CommanageCRUD(db).get(commanage=ComManageByHost(host_id=cominfo.host_id)):
+    try:
+        result = CommanageCRUD(db).get(commanage=ComManageByHost(host_id=cominfo.host_id))
+    except CrudException as err:
+        logger.error("[cominfo api]commanage get error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+    if not result:
         raise api_exception.HostNotFound(host_id=cominfo.host_id)
 
-    if CominfoCRUD(db).create(cominfo=cominfo) == ReturnCode.DB_CREATE_ERROR:
-        logger.error(f"ComInfo Create Fail. cominfo : {cominfo}")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_CREATE_ERROR}")
+    try:
+        created_cominfo = CominfoCRUD(db).create(cominfo=cominfo)
+    except CrudException as err:
+        logger.error("[cominfo api]cominfo create error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+    return ComInfoGet(host_id=created_cominfo.host_id)
 
 
-@router.get("/", response_model=list[ComInfo])
+@router.get("/{host_id}", status_code=status.HTTP_200_OK, response_model=list[ComInfo])
 def get_cominfos(
         *,
         db: Session = Depends(get_db),
@@ -59,12 +71,16 @@ def get_cominfos(
     :param end_dt: 종료 날짜/시간
     :return: List[ComInfoGet] 스키마
     """
-    if start_dt or end_dt:
-        cominfos = CominfoCRUD(db).get_by_datetime(cominfo=ComInfoGet(host_id=host_id),
-                                                   start_dt=start_dt, end_dt=end_dt)
-    else:
-        cominfos = CominfoCRUD(db).get_multiline(cominfo=ComInfoGet(host_id=host_id),
-                                                 skip=skip, limit=limit)
+    try:
+        if start_dt or end_dt:
+            cominfos = CominfoCRUD(db).get_by_datetime(cominfo=ComInfoGet(host_id=host_id),
+                                                       start_dt=start_dt, end_dt=end_dt)
+        else:
+            cominfos = CominfoCRUD(db).get_multiline(cominfo=ComInfoGet(host_id=host_id),
+                                                     skip=skip, limit=limit)
+    except CrudException as err:
+        logger.error("[cominfo api]cominfo get error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
 
     if not cominfos:
         raise api_exception.ItemNotFound()
@@ -72,29 +88,43 @@ def get_cominfos(
     return cominfos
 
 
-@router.put("/realtime", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/realtime", status_code=status.HTTP_200_OK)
 def put_cominfo_realtime(
         *,
         db: Session = Depends(get_db),
         cominfo: ComInfoRT
-) -> None:
+) -> JSONResponse:
     """
     CominfoRT(Real-Time) 값 추가 또는 수정
     :param db: db Session
     :param cominfo: 추가하려는 ComInfo 객체
-    :return: None
+    :return: JSONResponse
     """
-    if not CominfoRtCRUD(db).get(cominfo=ComInfoRT(host_id=cominfo.host_id)):
-        if CominfoRtCRUD(db).create(cominfo=cominfo) == ReturnCode.DB_CREATE_ERROR:
-            logger.error(f"ComInfo Create Fail. cominfo : {cominfo}")
-            raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_CREATE_ERROR}")
+    try:
+        result = CominfoRtCRUD(db).get(cominfo=ComInfoRT(host_id=cominfo.host_id))
+    except CrudException as err:
+        logger.error("[cominfoRT api]cominfort get error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+    if not result:
+        try:
+            created = CominfoRtCRUD(db).create(cominfo=cominfo)
+        except CrudException as err:
+            logger.error("[cominfoRT api]cominfort create error : " + str(err.return_code))
+            raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+        return JSONResponse(content={"message": f"host[{created.host_id}] create success"})
     else:
-        if CominfoRtCRUD(db).update(update_data=cominfo) == ReturnCode.DB_UPDATE_ERROR:
-            logger.error(f"ComInfo Update Fail. cominfo : {cominfo}")
-            raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_UPDATE_ERROR}")
+        try:
+            CominfoRtCRUD(db).update(update_data=cominfo)
+        except CrudException as err:
+            logger.error("[cominfoRT api]cominfort update error : " + str(err.return_code))
+            raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+        return JSONResponse(content={"message": "update success"})
 
 
-@router.get("/realtime/{host_id}", response_model=ComInfoRT)
+@router.get("/realtime/{host_id}", status_code=status.HTTP_200_OK, response_model=ComInfoRT)
 def get_cominfo_realtime(
         *,
         db: Session = Depends(get_db),
@@ -106,7 +136,13 @@ def get_cominfo_realtime(
     :param host_id: Host ID 값
     :return: ComInfoRT 스키마
     """
-    if cominfo_rt := CominfoRtCRUD(db).get(cominfo=ComInfoRT(host_id=host_id)):
-        return cominfo_rt
-    else:
+    try:
+        result = CominfoRtCRUD(db).get(cominfo=ComInfoRT(host_id=host_id))
+    except CrudException as err:
+        logger.error("[cominfoRT api]cominfort get error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+    if not result:
         raise api_exception.HostNotFound(host_id == host_id)
+
+    return result
