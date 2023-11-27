@@ -13,6 +13,6 @@ class User(Base):
             - user_name : 사용자 이름
     """
     user_id = Column(String(50), primary_key=True)
-    user_pw = Column(String(32))
+    user_pw = Column(String(256))
     user_name = Column(String(20))
     deleted = Column(Boolean, default=False)

@@ -4,12 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.core.log import logger
 from app.db.base import get_db
-from app.crud import return_code
 from app.crud.commanage_crud import CommanageCRUD
 from app.crud.user_crud import UserCRUD
 from app.schemas.user_schema import UserGet, UserCreate, UserResponse, UserStatus
 from app.schemas.commange_schema import ComManageByUser
 
+from app.crud.return_code import ReturnCode
 from app.exception import api_exception
 
 router = APIRouter()
@@ -30,9 +30,9 @@ def create_user(
     if UserCRUD(db).get(user=UserGet(user_id=user.user_id)):
         raise api_exception.AlreadyExistedUser(user_id=user.user_id)
 
-    if UserCRUD(db).create(user=user) == return_code.DB_CREATE_ERROR:
+    if UserCRUD(db).create(user=user) == ReturnCode.DB_CREATE_ERROR:
         logger.error(f"User Create Fail. user : {user}")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_CREATE_ERROR}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_CREATE_ERROR}")
 
     return UserResponse(user_id=user.user_id, user_name=user.user_name)
 
@@ -90,9 +90,9 @@ def update_user(
     if not UserCRUD(db).get(user=user):
         raise api_exception.UserNotFound(user_id=user.user_id)
 
-    if UserCRUD(db).update(update_data=user) == return_code.DB_UPDATE_ERROR:
+    if UserCRUD(db).update(update_data=user) == ReturnCode.DB_UPDATE_ERROR:
         logger.error(f"user[{user.user_id}] : update fail")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_UPDATE_ERROR}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_UPDATE_ERROR}")
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -112,12 +112,12 @@ def delete_user(
         raise api_exception.UserNotFound(user_id=user_id)
 
     # User ID 에 해당하는 ComManage 전부 삭제 처리
-    if CommanageCRUD(db).delete_all(commanage=ComManageByUser(user_id=user_id)) == return_code.DB_DELETE_ERROR:
+    if CommanageCRUD(db).delete_all(commanage=ComManageByUser(user_id=user_id)) == ReturnCode.DB_DELETE_ERROR:
         logger.error(f"Commanage Delete fail. user_id : {user_id}")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_DELETE_ERROR}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_DELETE_ERROR}")
 
     # user delete
     result = UserCRUD(db).delete(user=UserGet(user_id=user_id))
-    if result == return_code.DB_DELETE_ERROR:
+    if result == ReturnCode.DB_DELETE_ERROR:
         logger.error(f"user[{user_id}] : delete fail")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_DELETE_ERROR}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_DELETE_ERROR}")

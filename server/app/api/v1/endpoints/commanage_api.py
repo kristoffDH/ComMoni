@@ -7,7 +7,7 @@ from app.schemas.commange_schema import ComManage, ComManageByUser, ComManageByH
 from app.schemas.user_schema import UserGet
 from app.crud.commanage_crud import CommanageCRUD
 from app.crud.user_crud import UserCRUD
-from app.crud import return_code
+from app.crud.return_code import ReturnCode
 
 from app.exception import api_exception
 from app.core.log import logger
@@ -32,9 +32,9 @@ def create_commanage(
 
     result, host_id = CommanageCRUD(db).create(commanage=commanage)
 
-    if result == return_code.DB_CREATE_ERROR:
+    if result == ReturnCode.DB_CREATE_ERROR:
         logger.error(f"Commanage Create Fail. commanage : {commanage}")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_CREATE_ERROR}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_CREATE_ERROR}")
 
     return ComManageResponse(host_id=host_id)
 
@@ -79,9 +79,9 @@ def update_commanage(
     if not CommanageCRUD(db).get(commanage=commanage):
         raise api_exception.HostNotFound(host_id=commanage.host_id)
 
-    if CommanageCRUD(db).update(update_data=commanage) == return_code.DB_UPDATE_NONE:
+    if CommanageCRUD(db).update(update_data=commanage) == ReturnCode.DB_UPDATE_ERROR:
         logger.error(f"host[{commanage.host_id}] : update fail")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_UPDATE_NONE}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_UPDATE_NONE}")
 
 
 @router.delete("/{host_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -100,6 +100,6 @@ def delete_commanage(
     if not CommanageCRUD(db).get(commanage=ComManageByHost(host_id=host_id)):
         raise api_exception.HostNotFound(host_id=host_id)
 
-    if CommanageCRUD(db).delete(commanage=ComManageByHost(host_id=host_id)) == return_code.DB_UPDATE_NONE:
+    if CommanageCRUD(db).delete(delete_data=ComManageByHost(host_id=host_id)) == ReturnCode.DB_DELETE_ERROR:
         logger.error(f"host[{host_id}] : delete fail")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {return_code.DB_UPDATE_NONE}")
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_DELETE_ERROR}")
