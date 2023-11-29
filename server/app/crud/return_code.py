@@ -12,3 +12,9 @@ class ReturnCode(IntEnum):
     DB_UPDATE_ERROR = 3
     DB_DELETE_NONE = 4
     DB_DELETE_ERROR = 5
+    DB_ALL_DELETE_NONE = 6
+    DB_ALL_DELETE_ERROR = 7
+    DB_GET_ERROR = 8
+
+    def __str__(self):
+        return f"{self.value}-{self.name}"

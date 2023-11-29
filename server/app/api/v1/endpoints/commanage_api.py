@@ -1,5 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.db.base import get_db
@@ -7,9 +8,11 @@ from app.schemas.commange_schema import ComManage, ComManageByUser, ComManageByH
 from app.schemas.user_schema import UserGet
 from app.crud.commanage_crud import CommanageCRUD
 from app.crud.user_crud import UserCRUD
-from app.crud.return_code import ReturnCode
 
+from app.crud.return_code import ReturnCode
 from app.exception import api_exception
+from app.exception.crud_exception import CrudException
+
 from app.core.log import logger
 
 router = APIRouter()
@@ -25,81 +28,121 @@ def create_commanage(
     ComManage 생성
     :param db: db Session
     :param commanage: 추가하려는 ComManage 객체
-    :return: None
+    :return: ComManageResponse
     """
-    if not UserCRUD(db).get(UserGet(user_id=commanage.user_id)):
+    try:
+        result = UserCRUD(db).get(UserGet(user_id=commanage.user_id))
+    except CrudException as err:
+        logger.error("[commanage api]commanage get error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+    if not result:
         raise api_exception.UserNotFound(user_id=commanage.user_id)
 
-    result, host_id = CommanageCRUD(db).create(commanage=commanage)
+    try:
+        created_commanage = CommanageCRUD(db).create(commanage=commanage)
+    except CrudException as err:
+        logger.error("[commanage api]commanage create error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
 
-    if result == ReturnCode.DB_CREATE_ERROR:
-        logger.error(f"Commanage Create Fail. commanage : {commanage}")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_CREATE_ERROR}")
-
-    return ComManageResponse(host_id=host_id)
+    return ComManageResponse(host_id=created_commanage.host_id)
 
 
-@router.get("/", status_code=status.HTTP_200_OK, response_model=list[ComManage])
+@router.get("/{host_id}", status_code=status.HTTP_200_OK, response_model=ComManage)
 def get_commanage(
         *,
         db: Session = Depends(get_db),
-        user_id: Optional[str] = None,
-        host_id: Optional[int] = None
+        host_id: Optional[int]
+) -> ComManage:
+    """
+    Host ID로 ComManage 가져오기
+    :param db: db Session
+    :param host_id: Host ID 값
+    :return: ComManage 스키마
+    """
+    try:
+        commanage = ComManageByHost(host_id=host_id)
+        return CommanageCRUD(db).get(commanage=commanage)
+    except CrudException as err:
+        logger.error("[commanage api]commanage get error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+
+@router.get("/all/{user_id}", status_code=status.HTTP_200_OK, response_model=list[ComManage])
+def get_all_commanage(
+        *,
+        db: Session = Depends(get_db),
+        user_id: Optional[str]
 ) -> List[ComManage]:
     """
-    User ID 또는 Host ID로 ComManage 가져오기 (User ID와 Host ID 둘 중, 하나는 반드시 필요)
+    User ID로 ComManage 가져오기
     :param db: db Session
     :param user_id: User ID 값
-    :param host_id: Host ID 값
     :return: List[ComManage] 스키마
     """
-    if host_id:
-        commanage = ComManageByHost(host_id=host_id)
-        return [CommanageCRUD(db).get(commanage=commanage)]
-    elif user_id:
+    try:
         commanage = ComManageByUser(user_id=user_id)
         return CommanageCRUD(db).get_all(commanage=commanage)
-    else:
-        raise api_exception.ItemNotFound()
+    except CrudException as err:
+        logger.error("[commanage api]commanage get all error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
 
 
-@router.put("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/", status_code=status.HTTP_200_OK)
 def update_commanage(
         *,
         db: Session = Depends(get_db),
         commanage: ComManageByHost
-) -> None:
+) -> JSONResponse:
     """
     ComManage 객체 수정
     :param db: db Session
     :param commanage: 수정하려는 ComManage 객체
     :return: None
     """
+    try:
+        result = CommanageCRUD(db).get(commanage=commanage)
+    except CrudException as err:
+        logger.error("[commanage api]commanage get error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
 
-    if not CommanageCRUD(db).get(commanage=commanage):
+    if not result:
         raise api_exception.HostNotFound(host_id=commanage.host_id)
 
-    if CommanageCRUD(db).update(update_data=commanage) == ReturnCode.DB_UPDATE_ERROR:
-        logger.error(f"host[{commanage.host_id}] : update fail")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_UPDATE_NONE}")
+    try:
+        CommanageCRUD(db).update(update_data=commanage)
+    except CrudException as err:
+        logger.error("[commanage api]commanage update error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+    return JSONResponse(content={"message": "update success"})
 
 
-@router.delete("/{host_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{host_id}", status_code=status.HTTP_200_OK)
 def delete_commanage(
         *,
         db: Session = Depends(get_db),
         host_id: int
-) -> None:
+) -> JSONResponse:
     """
     ComManage 삭제
     :param db: db Session
     :param commanage: 삭제하려는 ComManage 객체
-    :return: None
+    :return: JSONResponse
     """
+    try:
+        result = CommanageCRUD(db).get(commanage=ComManageByHost(host_id=host_id))
+    except CrudException as err:
+        logger.error("[commanage api]commanage get error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
 
-    if not CommanageCRUD(db).get(commanage=ComManageByHost(host_id=host_id)):
+    if not result:
         raise api_exception.HostNotFound(host_id=host_id)
 
-    if CommanageCRUD(db).delete(delete_data=ComManageByHost(host_id=host_id)) == ReturnCode.DB_DELETE_ERROR:
-        logger.error(f"host[{host_id}] : delete fail")
-        raise api_exception.ServerError(f"Server Error. ErrorCode : {ReturnCode.DB_DELETE_ERROR}")
+    try:
+        CommanageCRUD(db).delete(delete_data=ComManageByHost(host_id=host_id))
+    except CrudException as err:
+        logger.error("[commanage api]commanage delete error : " + str(err.return_code))
+        raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+    return JSONResponse(content={"message": "delete success"})

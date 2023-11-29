@@ -4,8 +4,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.schemas.user_schema import UserGet, UserCreate
 from app.models import user_model as model
 from app.core.dictionary_util import dictionary_util
-from app.core.log import logger
+
 from app.crud.return_code import ReturnCode
+from app.exception.crud_exception import CrudException
+
+from app.core.log import logger
 
 
 class UserCRUD:
@@ -20,22 +23,23 @@ class UserCRUD:
         """
         self.session = session
 
-    def create(self, user: UserCreate) -> int:
+    def create(self, user: UserCreate) -> model.User:
         """
         User 객체 생성
         :param user: 추가하려는 User 객체
-        :return: return_code
+        :return: model.User
         """
         insert_data = model.User(**dict(user))
+
         try:
             self.session.add(insert_data)
             self.session.commit()
         except SQLAlchemyError as err:
             logger.error(f"[User]DB Err : {err}")
             self.session.rollback()
-            return ReturnCode.DB_CREATE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_CREATE_ERROR)
 
-        return ReturnCode.DB_OK
+        return insert_data
 
     def get(self, user: UserGet) -> model.User:
         """
@@ -43,10 +47,14 @@ class UserCRUD:
         :param user: user 요청 객체
         :return: model.User
         """
-        return self.session \
-            .query(model.User) \
-            .filter(model.User.user_id == user.user_id) \
-            .first()
+        try:
+            return self.session \
+                .query(model.User) \
+                .filter(model.User.user_id == user.user_id) \
+                .first()
+        except SQLAlchemyError as err:
+            logger.error(f"[User]DB Err : {err}")
+            raise CrudException(return_code=ReturnCode.DB_GET_ERROR)
 
     def update(self, update_data: UserGet) -> int:
         """
@@ -65,9 +73,13 @@ class UserCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[User]DB Error : {err}")
             self.session.rollback()
-            return ReturnCode.DB_UPDATE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_UPDATE_ERROR)
 
-        return ReturnCode.DB_OK if updated > 0 else ReturnCode.DB_UPDATE_NONE
+        if updated == 0:
+            logger.error("[User]Update is None")
+            raise CrudException(return_code=ReturnCode.DB_UPDATE_NONE)
+
+        return ReturnCode.DB_OK
 
     def delete(self, user: UserGet) -> int:
         """
@@ -83,6 +95,10 @@ class UserCRUD:
         except SQLAlchemyError as err:
             logger.error(f"[User]DB Err : {err}")
             self.session.rollback()
-            return ReturnCode.DB_DELETE_ERROR
+            raise CrudException(return_code=ReturnCode.DB_DELETE_ERROR)
 
-        return ReturnCode.DB_OK if deleted > 0 else ReturnCode.DB_DELETE_NONE
+        if deleted == 0:
+            logger.error("[User]Delete is None")
+            raise CrudException(return_code=ReturnCode.DB_DELETE_NONE)
+
+        return ReturnCode.DB_OK
