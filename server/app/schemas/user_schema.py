@@ -28,6 +28,11 @@ class UserCreate(UserBase):
     user_pw: str
 
 
+class UserVerify(UserBase):
+    user_id: str
+    user_pw: str
+
+
 class UserResponse(BaseModel):
     user_id: str
     user_name: str

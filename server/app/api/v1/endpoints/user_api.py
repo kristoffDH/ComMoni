@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.db.base import get_db
 from app.crud.commanage_crud import CommanageCRUD
-from app.crud.user_crud import UserCRUD
+from app.crud.user_crud import UserCRUD, get_password_hash
 from app.schemas.user_schema import UserGet, UserCreate, UserResponse, UserStatus
 from app.schemas.commange_schema import ComManageByUser
 
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 from app.exception import api_exception
 from app.exception.crud_exception import CrudException
 
@@ -38,8 +38,11 @@ def create_user(
     if result:
         raise api_exception.AlreadyExistedUser(user_id=user.user_id)
 
+    create_data = user
+    create_data.user_pw = get_password_hash(password=user.user_pw)
+
     try:
-        created_user = UserCRUD(db).create(user=user)
+        created_user = UserCRUD(db).create(user=create_data)
     except CrudException as err:
         logger.error(f"[user api]User create error : " + str(err.return_code))
         raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")

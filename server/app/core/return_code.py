@@ -15,6 +15,9 @@ class ReturnCode(IntEnum):
     DB_ALL_DELETE_NONE = 6
     DB_ALL_DELETE_ERROR = 7
     DB_GET_ERROR = 8
+    USER_NOT_FOUND = 9
+    USER_PW_INVALID = 10
+    USER_IS_DELETED = 11
 
     def __str__(self):
         return f"{self.value}-{self.name}"

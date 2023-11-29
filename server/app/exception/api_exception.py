@@ -10,10 +10,12 @@ class APIExceptionBase(Exception):
     """
     status: int
     message: str
+    headers: dict = None
 
-    def __init__(self, http_status: int, message: str):
+    def __init__(self, http_status: int, message: str, headers: dict = None):
         self.http_status = http_status
         self.message = message
+        self.headers = headers
 
     def make_content(self) -> dict:
         """
@@ -53,6 +55,16 @@ class ItemNotFound(APIExceptionBase):
                          message="Item not Found.")
 
 
+class Unauthorized(APIExceptionBase):
+    """
+    UNAUTHORIZED에 대한 예외 처리 클래스
+    """
+
+    def __init__(self):
+        super().__init__(http_status=status.HTTP_401_UNAUTHORIZED,
+                         message="Unauthorized.")
+
+
 class HostNotFound(APIExceptionBase):
     """
     User 가 없을때 처리할 예외 클래스
@@ -71,6 +83,17 @@ class ServerError(APIExceptionBase):
     def __init__(self, err_message: str):
         super().__init__(http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                          message=f"Server error. Internal err code : {err_message}")
+
+
+class CredentialsError(APIExceptionBase):
+    """
+    token validate credentials 예외처리 클래스
+    """
+
+    def __init__(self):
+        super().__init__(http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                         message="Could not validate credentials",
+                         headers={"WWW-Authenticate": "Bearer"})
 
 
 __all__ = (
