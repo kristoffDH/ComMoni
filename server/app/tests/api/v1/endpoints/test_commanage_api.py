@@ -5,7 +5,7 @@ from app.models.user_model import User
 from app.models import commanage_model as model
 from app.schemas.commange_schema import ComManageResponse
 
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 from app.exception.crud_exception import CrudException
 
 

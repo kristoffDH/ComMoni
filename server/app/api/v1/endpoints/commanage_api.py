@@ -9,7 +9,6 @@ from app.schemas.user_schema import UserGet
 from app.crud.commanage_crud import CommanageCRUD
 from app.crud.user_crud import UserCRUD
 
-from app.crud.return_code import ReturnCode
 from app.exception import api_exception
 from app.exception.crud_exception import CrudException
 

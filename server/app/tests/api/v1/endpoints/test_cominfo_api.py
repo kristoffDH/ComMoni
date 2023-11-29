@@ -4,9 +4,9 @@ from datetime import datetime
 from app.tests.api.conftest import test_client
 from app.models.commanage_model import ComManage
 from app.models import cominfo_model as model
-from app.schemas.cominfo_schema import ComInfo, ComInfoRT, ComInfoGet
+from app.schemas.cominfo_schema import ComInfo, ComInfoGet
 
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 from app.exception.crud_exception import CrudException
 
 

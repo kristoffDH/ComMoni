@@ -9,7 +9,7 @@ from app.models import cominfo_model as model
 from app.schemas.cominfo_schema import ComInfoGet, ComInfoCreate, ComInfoRT
 from app.crud.cominfo_crud import CominfoCRUD, CominfoRtCRUD
 
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 from app.exception.crud_exception import CrudException
 
 

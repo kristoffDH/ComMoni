@@ -4,7 +4,7 @@ from app.tests.api.conftest import test_client
 from app.models import user_model as model
 from app.schemas.user_schema import UserResponse, UserStatus
 
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 from app.exception.crud_exception import CrudException
 
 
