@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
@@ -8,8 +8,8 @@ from app.db.base import get_db
 from app.crud.user_crud import UserCRUD
 from app.schemas.user_schema import UserVerify
 
-from app.schemas.token_schema import Token
-from app.core.token import create_token, JwtTokenType
+from app.schemas.token_schema import Token, TokenData
+from app.core.token import JwtTokenType, create_token, get_current_user
 
 from app.core.return_code import ReturnCode
 from app.exception import api_exception
@@ -20,8 +20,8 @@ from app.core.log import logger
 router = APIRouter()
 
 
-@router.post("/login", response_model=Token)
-async def login_for_token(
+@router.post("/token", response_model=Token)
+def login_for_token(
         *,
         db: Session = Depends(get_db),
         form_data=Depends(OAuth2PasswordRequestForm)
@@ -46,4 +46,30 @@ async def login_for_token(
             raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
 
     access_token = create_token(user_id=user.user_id, token_type=JwtTokenType.ACCESS)
-    return Token(access_token=access_token)
+    refresh_token = create_token(user_id=user.user_id, token_type=JwtTokenType.REFRESH)
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/refresh-token", response_model=Token)
+def refresh_access_token(
+        *,
+        db: Session = Depends(get_db),
+        token_data: TokenData = Depends(get_current_user)
+) -> Token:
+    """
+
+    :param db: db session
+    :param token_data: 토큰 정보
+    :return: Token
+    """
+    logger.info(f"token expire date : {datetime.fromtimestamp(token_data.expire)}")
+
+    if token_data.expire < (datetime.utcnow() + timedelta(days=2)).timestamp():
+        logger.info("refresh token 재발급")
+        refresh_token = create_token(user_id=token_data.user_id, token_type=JwtTokenType.REFRESH)
+    else:
+        logger.info("refresh toekn 유효기간 남음")
+        refresh_token = None
+
+    access_token = create_token(user_id=token_data.user_id, token_type=JwtTokenType.ACCESS)
+    return Token(access_token=access_token, refresh_token=refresh_token)

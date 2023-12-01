@@ -85,14 +85,14 @@ class ServerError(APIExceptionBase):
                          message=f"Server error. Internal err code : {err_message}")
 
 
-class CredentialsError(APIExceptionBase):
+class TokenInvalidate(APIExceptionBase):
     """
     token validate credentials 예외처리 클래스
     """
 
-    def __init__(self):
-        super().__init__(http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                         message="Could not validate credentials",
+    def __init__(self, err_message: str):
+        super().__init__(http_status=status.HTTP_401_UNAUTHORIZED,
+                         message=f"toekn invalidate : {err_message}",
                          headers={"WWW-Authenticate": "Bearer"})
 
 

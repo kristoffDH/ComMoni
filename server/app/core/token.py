@@ -1,18 +1,17 @@
 from datetime import datetime, timedelta
-from typing import Union, Any
 from enum import Enum
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from app.schemas.token_schema import TokenData
 
-from app.schemas.user_schema import UserGet
-from app.exception.api_exception import CredentialsError
+from app.exception.api_exception import TokenInvalidate
 
 from app.core.config import settings
 from app.core.log import logger
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login/access_token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login/token")
 
 
 class JwtTokenType(Enum):
@@ -44,7 +43,7 @@ def create_token(user_id: str, token_type: JwtTokenType) -> str:
     return encoded_jwt
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> UserGet:
+def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
     """
     jwt 토큰에서 현재 사용자 확인
     :param token: jwt 토큰
@@ -52,13 +51,14 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> UserGet:
     """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: str = payload.get("user_id")
+        user_id = payload.get("user_id")
+        expire = payload.get("exp")
 
-        if user_id is None:
-            logger.error(f"[toekn] {user_id} is empty in token")
-            raise CredentialsError()
+        if not user_id:
+            logger.error("[token] user_id is empty in token")
+            raise TokenInvalidate("user_id empty")
 
-        return UserGet(user_id=user_id)
+        return TokenData(user_id=user_id, expire=expire)
     except JWTError as err:
-        logger.error(f"[toekn] jwt error : {err}")
-        raise CredentialsError()
+        logger.error(f"[token] jwt error : {err}")
+        raise TokenInvalidate(str(err))
