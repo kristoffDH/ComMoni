@@ -15,5 +15,7 @@ class TokenData(BaseModel):
     """
     token data schema
     """
+    token: str
     user_id: str
+    host_id: int
     expire: int

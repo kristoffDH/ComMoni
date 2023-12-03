@@ -61,10 +61,15 @@ def get_commanage(
     """
     try:
         commanage = ComManageByHost(host_id=host_id)
-        return CommanageCRUD(db).get(commanage=commanage)
+        result = CommanageCRUD(db).get(commanage=commanage)
     except CrudException as err:
         logger.error("[commanage api]commanage get error : " + str(err.return_code))
         raise api_exception.ServerError(f"Server Error. ErrorCode : {err.return_code}")
+
+    if not result:
+        raise api_exception.ItemNotFound()
+
+    return result
 
 
 @router.get("/all/{user_id}", status_code=status.HTTP_200_OK, response_model=list[ComManage])

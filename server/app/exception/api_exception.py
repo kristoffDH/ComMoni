@@ -72,7 +72,7 @@ class HostNotFound(APIExceptionBase):
 
     def __init__(self, host_id: int):
         super().__init__(http_status=status.HTTP_404_NOT_FOUND,
-                         message=f"{host_id} is not existed.")
+                         message=f"[{host_id}] host_id is not existed.")
 
 
 class ServerError(APIExceptionBase):
