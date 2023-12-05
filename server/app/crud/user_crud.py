@@ -1,14 +1,37 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.schemas.user_schema import UserGet, UserCreate
+from app.schemas.user_schema import UserGet, UserCreate, UserVerify
 from app.models import user_model as model
 from app.core.dictionary_util import dictionary_util
 
-from app.crud.return_code import ReturnCode
+from passlib.context import CryptContext
+
+from app.core.return_code import ReturnCode
 from app.exception.crud_exception import CrudException
 
 from app.core.log import logger
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    비밀번호 해시값 비교 인증
+    :param plain_password: 평문 비밀번호
+    :param hashed_password: 해시된 비밀번호
+    :return: bool
+    """
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
+    """
+    비밀번호 해시하여 반환
+    :param password: 원본 비밀번호
+    :return: 해시된 비밀번호
+    """
+    return pwd_context.hash(password)
 
 
 class UserCRUD:
@@ -102,3 +125,30 @@ class UserCRUD:
             raise CrudException(return_code=ReturnCode.DB_DELETE_NONE)
 
         return ReturnCode.DB_OK
+
+    def authenticate_user(self, user: UserVerify) -> model.User:
+        """
+        유저 인증 확인
+        :param user: 인증하려는 유저 정보
+        :return: model.User
+        """
+        try:
+            get_user = self.session \
+                .query(model.User) \
+                .filter(model.User.user_id == user.user_id) \
+                .first()
+        except SQLAlchemyError as err:
+            logger.error(f"[User]DB Err : {err}")
+            raise CrudException(return_code=ReturnCode.DB_GET_ERROR)
+
+        if not get_user:
+            raise CrudException(return_code=ReturnCode.USER_NOT_FOUND)
+
+        if not verify_password(plain_password=user.user_pw,
+                               hashed_password=get_user.user_pw):
+            raise CrudException(return_code=ReturnCode.USER_PW_INVALID)
+
+        if get_user.deleted:
+            raise CrudException(return_code=ReturnCode.USER_IS_DELETED)
+
+        return get_user

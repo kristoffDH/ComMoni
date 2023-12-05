@@ -5,5 +5,10 @@ from app.exception.api_exception import APIExceptionBase
 
 
 def base_exception_handler(_: Request, exc: APIExceptionBase):
-    return JSONResponse(status_code=exc.http_status,
-                        content=exc.make_content())
+    if exc.headers:
+        return JSONResponse(status_code=exc.http_status,
+                            headers=exc.headers,
+                            content=exc.make_content())
+    else:
+        return JSONResponse(status_code=exc.http_status,
+                            content=exc.make_content())

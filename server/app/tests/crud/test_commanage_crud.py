@@ -5,10 +5,10 @@ from mock_alchemy.mocking import AlchemyMagicMock, UnifiedAlchemyMagicMock
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models import commanage_model as model
-from app.schemas.commange_schema import ComManage, ComManageByUser, ComManageByHost
+from app.schemas.commange_schema import ComManageByUser, ComManageByHost
 from app.crud.commanage_crud import CommanageCRUD
 
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 from app.exception.crud_exception import CrudException
 
 

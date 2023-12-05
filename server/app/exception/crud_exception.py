@@ -1,4 +1,4 @@
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 
 
 class CrudException(Exception):

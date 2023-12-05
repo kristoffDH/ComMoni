@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.schemas.cominfo_schema import ComInfoCreate, ComInfoGet, ComInfoRT
 from app.models import cominfo_model as model
 
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 from app.exception.crud_exception import CrudException
 
 from app.core.log import logger

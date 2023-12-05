@@ -8,7 +8,7 @@ from app.models import user_model as model
 from app.schemas.user_schema import UserCreate, UserGet
 from app.crud.user_crud import UserCRUD
 
-from app.crud.return_code import ReturnCode
+from app.core.return_code import ReturnCode
 from app.exception.crud_exception import CrudException
 
 
