@@ -23,10 +23,11 @@ class TokenUtil:
     token 관련 유틸 클래스
     """
 
-    def __init__(self, user_id: str, host_id: int, expire: int = 0):
+    def __init__(self, user_id: str, host_id: int, token_type: JwtTokenType, expire: int = 0):
         self.user_id = user_id
         self.host_id = host_id
         self.expire = expire
+        self.token_type = token_type
 
     def create(self, token_type: JwtTokenType) -> str:
         """
@@ -65,6 +66,11 @@ class TokenUtil:
             host_id = payload.get("host_id")
             expire = payload.get("exp")
 
-            return cls(user_id=user_id, host_id=host_id, expire=expire)
+            if payload.get("type") == str(JwtTokenType.ACCESS):
+                token_type = JwtTokenType.ACCESS
+            else:
+                token_type = JwtTokenType.REFRESH
+
+            return cls(user_id=user_id, host_id=host_id, expire=expire, token_type=token_type)
         except JWTError as err:
             raise exception.TokenInvalidateErr(err)

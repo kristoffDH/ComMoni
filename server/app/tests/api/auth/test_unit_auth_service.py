@@ -5,6 +5,7 @@ from redis import RedisError
 from app.api import user
 from app.api.auth import service
 from app.api.auth.schema import Token
+from app.api.auth.token_util import JwtTokenType
 
 from app.api.exception import api_error
 from app.api.auth.exception import TokenInvalidateErr
@@ -78,6 +79,7 @@ class TestAuthService:
         token_util = mocker.MagicMock()
         token_util.is_expired.return_value = False
         token_util.create.return_value = self.access_token
+        token_util.token_type = JwtTokenType.REFRESH
         mocker.patch('app.api.auth.token_util.TokenUtil.from_token', return_value=token_util)
 
         result = service.renew_token(token=self.refresh_token, redis=redis)
@@ -90,6 +92,7 @@ class TestAuthService:
         token_util = mocker.MagicMock()
         token_util.is_expired.return_value = True
         token_util.create.return_value = self.access_token
+        token_util.token_type = JwtTokenType.REFRESH
         mocker.patch('app.api.auth.token_util.TokenUtil.from_token', return_value=token_util)
 
         result = service.renew_token(token=self.refresh_token, redis=redis)
@@ -106,13 +109,24 @@ class TestAuthService:
         with pytest.raises(api_error.Unauthorized):
             service.renew_token(token=self.refresh_token, redis=redis)
 
-    def test_renew_token_fail_2(self, mocker):
+    def test_renew_token_fail_1(self, mocker):
+        """ token 갱신 실패 Refresh-token이 아닐 경우"""
+        redis = mocker.MagicMock()
+        token_util = mocker.MagicMock()
+        token_util.token_type = JwtTokenType.ACCESS
+        mocker.patch('app.api.auth.token_util.TokenUtil.from_token', return_value=token_util)
+
+        with pytest.raises(api_error.Unauthorized):
+            service.renew_token(token=self.refresh_token, redis=redis)
+
+    def test_renew_token_fail_3(self, mocker):
         """ token 갱신 실패 redis error"""
         redis = mocker.MagicMock()
         redis.set.side_effect = RedisError()
         token_util = mocker.MagicMock()
         token_util.is_expired.return_value = True
         token_util.create.return_value = self.access_token
+        token_util.token_type = JwtTokenType.REFRESH
         mocker.patch('app.api.auth.token_util.TokenUtil.from_token', return_value=token_util)
 
         with pytest.raises(api_error.ServerError):

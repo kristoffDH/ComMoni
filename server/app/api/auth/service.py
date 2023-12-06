@@ -103,6 +103,10 @@ def renew_token(token: str, redis: Redis) -> Token:
         logger.error(f"[auth-service] TokenUtil error : {err}")
         raise api_error.Unauthorized()
 
+    if token_util.token_type != JwtTokenType.REFRESH:
+        logger.error(f"[auth-service] current Token is not Refresh-token")
+        raise api_error.Unauthorized()
+
     # refresh token 만료전 체크일자
     compare_timedelta = (datetime.utcnow() + timedelta(days=settings.DATE_BEFORE_EXPIRATION)).timestamp()
     if token_util.is_expired(compare_timedelta):
