@@ -23,7 +23,7 @@ class TokenUtil:
     token 관련 유틸 클래스
     """
 
-    def __init__(self, user_id: str, host_id: int, token_type: JwtTokenType, expire: int = 0):
+    def __init__(self, user_id: str, host_id: int, token_type: JwtTokenType = None, expire: int = 0):
         self.user_id = user_id
         self.host_id = host_id
         self.expire = expire
