@@ -109,7 +109,7 @@ class TestAuthService:
         with pytest.raises(api_error.Unauthorized):
             service.renew_token(token=self.refresh_token, redis=redis)
 
-    def test_renew_token_fail_1(self, mocker):
+    def test_renew_token_fail_2(self, mocker):
         """ token 갱신 실패 Refresh-token이 아닐 경우"""
         redis = mocker.MagicMock()
         token_util = mocker.MagicMock()
