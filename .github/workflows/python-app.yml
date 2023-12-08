@@ -13,9 +13,20 @@ permissions:
   contents: read
 
 jobs:
-  run-test-code:
+  run-test-serrver-code:
     runs-on: ubuntu-latest
+    env:
+      working-directory: ./directory_you_want_to_run_step
     steps:
     - uses: actions/checkout@v3
-    - run: ls
-
+    - uses: actions/setup-python@v3
+      with:
+        python-version: "3.9"
+    - name: set pythonpath
+      run: echo "PYTHONPATH= ${{ env.working-directory }}" >> $GITHUB_ENV
+    - name: install package
+      run: pip install -r requirements.dev.txt
+      working-directory: ${{ env.working-directory }}
+    - name: run test
+      run: pytest --path ./app/tests/
+      working-directory: ${{ env.working-directory }}
