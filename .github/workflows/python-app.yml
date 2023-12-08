@@ -16,7 +16,7 @@ jobs:
   run-test-serrver-code:
     runs-on: ubuntu-latest
     env:
-      working-directory: ./directory_you_want_to_run_step
+      working-directory: ./server
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v3
