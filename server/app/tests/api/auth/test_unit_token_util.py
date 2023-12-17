@@ -2,8 +2,7 @@ import pytest
 from datetime import datetime, timedelta, timezone
 
 from jose import jwt, JWTError
-from app.api.auth.token_util import JwtToken, TokenUtil, JwtTokenType, JWTError
-from app.api.auth.exception import TokenInvalidateErr
+from app.api.auth.token_util import JwtToken, TokenUtil, JwtTokenType, JWTError, TokenInvalidateErr
 
 SECRET_KEY: str = "0548a115e749bd446115d6c05e95838b2f7b47568e110186e0fe81fca376e19d"
 ALGORITHM: str = "HS256"

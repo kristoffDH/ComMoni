@@ -2,7 +2,6 @@ from enum import Enum
 from datetime import datetime, timedelta
 
 from jose import jwt, JWTError
-from app.api.auth import exception
 
 from app.configs.config import settings
 
@@ -20,6 +19,10 @@ class JwtTokenType(Enum):
         return str(self.value)
 
 
+class TokenInvalidateErr(Exception):
+    pass
+
+
 class JwtToken:
     """JWT 토큰 클래스"""
 
@@ -28,7 +31,7 @@ class JwtToken:
         try:
             self.payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         except JWTError as err:
-            raise exception.TokenInvalidateErr(err)
+            raise TokenInvalidateErr(err)
 
         self.token_string = token
 
@@ -129,7 +132,7 @@ class TokenUtil:
         try:
             token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
         except JWTError as err:
-            raise exception.TokenInvalidateErr(err)
+            raise TokenInvalidateErr(err)
 
         return JwtToken(token)
 
