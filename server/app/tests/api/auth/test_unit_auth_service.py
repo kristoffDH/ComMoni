@@ -173,7 +173,7 @@ class TestAuthService:
             AuthService(redis=redis).create_agent_token(user_id=self.user_id,
                                                         host_id=self.host_id)
 
-    def test_create_token_set(self, mocker):
+    def test_create_token_set_1(self, mocker):
         """AuthService agent,refresh token 생성"""
         access_token = mocker.Mock()
         access_token.value = "access"
@@ -188,6 +188,18 @@ class TestAuthService:
 
         assert token_set.access_token == access_token.value
         assert token_set.refresh_token == refresh_token.value
+
+    def test_create_token_set_2(self, mocker):
+        """AuthService agent,refresh token 생성, temp_login"""
+        access_token = mocker.Mock()
+        access_token.value = "access"
+        mocker.patch("app.api.auth.service.AuthService.create_access_token",
+                     return_value=access_token)
+
+        token_set = AuthService().create_token_set(user_id=self.user_id, temp_login=True)
+
+        assert token_set.access_token == access_token.value
+        assert token_set.refresh_token == ""
 
     def test_renew_token_1(self, mocker):
         """AuthService token 갱신 성공"""

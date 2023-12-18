@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 
@@ -19,6 +19,7 @@ auth_router = APIRouter(prefix=f"/{API_VERSION}/{API_NAME}")
 def login_with_request_form(
         *,
         form_data=Depends(OAuth2PasswordRequestForm),
+        temp_login: bool = Form(False),
         auth_service=Depends(get_auth_service)
 ):
     """
@@ -27,7 +28,8 @@ def login_with_request_form(
     user_id = form_data.username
     user_pw = form_data.password
     auth_service.authenticate(user_id=user_id, user_pw=user_pw)
-    return auth_service.create_token_set(user_id=user_id)
+
+    return auth_service.create_token_set(user_id=user_id, temp_login=temp_login)
 
 
 @auth_router.post("/register-commanage", status_code=status.HTTP_200_OK, response_model=Token)

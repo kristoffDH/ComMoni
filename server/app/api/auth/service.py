@@ -133,11 +133,14 @@ class AuthService:
 
         return Token(value=agent_token.token_string, type=JwtTokenType.AGENT)
 
-    def create_token_set(self, user_id) -> TokenSet:
+    def create_token_set(self, user_id: str, temp_login: bool = False) -> TokenSet:
         """access/refresh token을 같이 생성"""
         access_token = self.create_access_token(user_id=user_id)
-        refresh_token = self.create_refresh_token(user_id=user_id)
-        return TokenSet(access_token=access_token.value, refresh_token=refresh_token.value)
+        if not temp_login:
+            refresh_token = self.create_refresh_token(user_id=user_id)
+            return TokenSet(access_token=access_token.value, refresh_token=refresh_token.value)
+
+        return TokenSet(access_token=access_token.value, refresh_token="")
 
     def renew_token(self, token: JwtToken) -> TokenSet:
         """토큰 갱신"""
