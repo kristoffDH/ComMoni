@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 
@@ -15,7 +15,7 @@ API_NAME = "auth"
 auth_router = APIRouter(prefix=f"/{API_VERSION}/{API_NAME}")
 
 
-@auth_router.post("/login", response_model=TokenSet)
+@auth_router.post("/login", status_code=status.HTTP_200_OK, response_model=TokenSet)
 def login_with_request_form(
         *,
         form_data=Depends(OAuth2PasswordRequestForm),
@@ -30,7 +30,7 @@ def login_with_request_form(
     return auth_service.create_token_set(user_id=user_id)
 
 
-@auth_router.post("/register-commanage", response_model=Token)
+@auth_router.post("/register-commanage", status_code=status.HTTP_200_OK, response_model=Token)
 def register_commanage(
         *,
         commanage_data: ComManageByUser,
@@ -45,7 +45,7 @@ def register_commanage(
     return auth_service.create_agent_token(user_id=user_id, host_id=host_id)
 
 
-@auth_router.get("/refresh-token", response_model=TokenSet)
+@auth_router.get("/refresh-token", status_code=status.HTTP_200_OK, response_model=TokenSet)
 def renew_token(
         *,
         token: JwtToken = Depends(get_jwt_token),
@@ -58,7 +58,7 @@ def renew_token(
     return auth_service.renew_token(token)
 
 
-@auth_router.get("/logout")
+@auth_router.get("/logout", status_code=status.HTTP_200_OK)
 def logout(
         *,
         token: JwtToken = Depends(get_jwt_token),
