@@ -20,6 +20,6 @@ def create_table():
 
 
 if __name__ == "__main__":
-    drop_table()
+    # drop_table()
     print("DB Init")
     create_table()
