@@ -16,12 +16,14 @@ API_NAME = "commanage"
 commanage_router = APIRouter(prefix=f"/{API_VERSION}/{API_NAME}")
 
 
-@commanage_router.get("/{host_id}", status_code=status.HTTP_200_OK, response_model=ComManage)
+@commanage_router.get("/{host_id}",
+                      status_code=status.HTTP_200_OK,
+                      response_model=ComManage,
+                      dependencies=[Depends(verify_access_token)])
 def get_commanage(
         *,
         db: Session = Depends(get_db),
-        host_id: int,
-        _=Depends(verify_access_token)
+        host_id: int
 ) -> ComManage:
     """
     Host ID로 ComManage 가져오기
@@ -32,12 +34,14 @@ def get_commanage(
     return CommanageService(db=db).get(host_id=host_id)
 
 
-@commanage_router.get("/all/{user_id}", status_code=status.HTTP_200_OK, response_model=list[ComManage])
+@commanage_router.get("/all/{user_id}",
+                      status_code=status.HTTP_200_OK,
+                      response_model=list[ComManage],
+                      dependencies=[Depends(verify_access_token)])
 def get_all_commanage(
         *,
         db: Session = Depends(get_db),
-        user_id: str,
-        _=Depends(verify_access_token)
+        user_id: str
 ) -> List[ComManage]:
     """
     User ID로 ComManage 가져오기
@@ -48,12 +52,13 @@ def get_all_commanage(
     return CommanageService(db=db).get_all(user_id=user_id)
 
 
-@commanage_router.put("/", status_code=status.HTTP_200_OK)
+@commanage_router.put("/",
+                      status_code=status.HTTP_200_OK,
+                      dependencies=[Depends(verify_access_token)])
 def update_commanage(
         *,
         db: Session = Depends(get_db),
-        commanage: ComManageByHost,
-        _=Depends(verify_access_token)
+        commanage: ComManageByHost
 ) -> JSONResponse:
     """
     ComManage 객체 수정
@@ -65,12 +70,13 @@ def update_commanage(
     return JSONResponse(content={"message": "success"})
 
 
-@commanage_router.delete("/{host_id}", status_code=status.HTTP_200_OK)
+@commanage_router.delete("/{host_id}",
+                         status_code=status.HTTP_200_OK,
+                         dependencies=[Depends(verify_access_token)])
 def delete_commanage(
         *,
         db: Session = Depends(get_db),
-        host_id: int,
-        _=Depends(verify_access_token)
+        host_id: int
 ) -> JSONResponse:
     """
     ComManage 삭제xs

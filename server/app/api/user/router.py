@@ -45,13 +45,14 @@ def get_user(
     return UserService(db=db).get(user_id=user_id)
 
 
-@user_router.get("/{user_id}/status", status_code=status.HTTP_200_OK,
-                 response_model=UserStatus)
+@user_router.get("/{user_id}/status",
+                 status_code=status.HTTP_200_OK,
+                 response_model=UserStatus,
+                 dependencies=[Depends(verify_access_token)])
 def get_user_status(
         *,
         db: Session = Depends(get_db),
-        user_id: str,
-        _=Depends(verify_access_token)
+        user_id: str
 ) -> UserStatus:
     """
     User 상태 정보 확인
@@ -62,12 +63,13 @@ def get_user_status(
     return UserService(db=db).get_status(user_id=user_id)
 
 
-@user_router.put("/", status_code=status.HTTP_200_OK)
+@user_router.put("/",
+                 status_code=status.HTTP_200_OK,
+                 dependencies=[Depends(verify_access_token)])
 def update_user(
         *,
         db: Session = Depends(get_db),
-        user: UserGet,
-        _=Depends(verify_access_token)
+        user: UserGet
 ):
     """
     User 객체 정보 수정
@@ -79,12 +81,13 @@ def update_user(
     return JSONResponse(content={"message": "success"})
 
 
-@user_router.delete("/{user_id}", status_code=status.HTTP_200_OK)
+@user_router.delete("/{user_id}",
+                    status_code=status.HTTP_200_OK,
+                    dependencies=[Depends(verify_access_token)])
 def delete_user(
         *,
         db: Session = Depends(get_db),
-        user_id: str,
-        _=Depends(verify_access_token)
+        user_id: str
 ):
     """
     User를 삭제

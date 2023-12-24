@@ -18,12 +18,13 @@ API_NAME = "cominfo"
 cominfo_router = APIRouter(prefix=f"/{API_VERSION}/{API_NAME}")
 
 
-@cominfo_router.post("/", status_code=status.HTTP_201_CREATED)
+@cominfo_router.post("/",
+                     status_code=status.HTTP_201_CREATED,
+                     dependencies=[Depends(verify_agent_token)])
 def create_cominfo(
         *,
         db: Session = Depends(get_db),
-        cominfo: ComInfoCreate,
-        _=Depends(verify_agent_token)
+        cominfo: ComInfoCreate
 ) -> ComInfoGet:
     """
     ComInfo 객체 추가
@@ -34,7 +35,10 @@ def create_cominfo(
     return CominfoService(db=db).create(cominfo=cominfo)
 
 
-@cominfo_router.get("/{host_id}", status_code=status.HTTP_200_OK, response_model=list[ComInfo])
+@cominfo_router.get("/{host_id}",
+                    status_code=status.HTTP_200_OK,
+                    response_model=list[ComInfo],
+                    dependencies=[Depends(verify_access_token)])
 def get_cominfos(
         *,
         db: Session = Depends(get_db),
@@ -42,8 +46,7 @@ def get_cominfos(
         skip: int = 0,
         limit: int = 50,
         start_dt: Optional[datetime] = None,
-        end_dt: Optional[datetime] = None,
-        _=Depends(verify_access_token)
+        end_dt: Optional[datetime] = None
 ) -> List[ComInfo]:
     """
     ComInfo 값 가져오기
@@ -62,12 +65,13 @@ def get_cominfos(
                                      end_dt=end_dt)
 
 
-@cominfo_router.put("/realtime", status_code=status.HTTP_200_OK)
+@cominfo_router.put("/realtime",
+                    status_code=status.HTTP_200_OK,
+                    dependencies=[Depends(verify_agent_token)])
 def put_cominfo_realtime(
         *,
         db: Session = Depends(get_db),
-        cominfo: ComInfoRTGet,
-        _=Depends(verify_agent_token)
+        cominfo: ComInfoRTGet
 ) -> JSONResponse:
     """
     CominfoRT(Real-Time) 값 추가 또는 수정
@@ -79,12 +83,14 @@ def put_cominfo_realtime(
     return JSONResponse(content={"message": "success"})
 
 
-@cominfo_router.get("/realtime/{host_id}", status_code=status.HTTP_200_OK, response_model=ComInfoRTGet)
+@cominfo_router.get("/realtime/{host_id}",
+                    status_code=status.HTTP_200_OK,
+                    response_model=ComInfoRTGet,
+                    dependencies=[Depends(verify_access_token)])
 def get_cominfo_realtime(
         *,
         db: Session = Depends(get_db),
         host_id: int,
-        _=Depends(verify_access_token)
 ) -> ComInfoRTGet:
     """
     CominfoRT(Real-Time) 값 가져오기
