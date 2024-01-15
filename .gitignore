@@ -178,3 +178,7 @@ pyrightconfig.json
 .idea/
 
 .logfile.log
+
+host_info.ini
+
+token.txt
